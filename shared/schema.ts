@@ -12,6 +12,8 @@ export const timesheetStatusEnum = pgEnum("timesheet_status", ["draft", "submitt
 export const leaveTypeEnum = pgEnum("leave_type", ["vacation", "sick", "personal", "bereavement", "maternity", "paternity"]);
 export const leaveStatusEnum = pgEnum("leave_status", ["pending", "approved", "denied"]);
 export const paystubStatusEnum = pgEnum("paystub_status", ["pending", "issued", "corrected"]);
+export const employmentTypeEnum = pgEnum("employment_type", ["hourly", "salaried"]);
+export const entryCategoryEnum = pgEnum("entry_category", ["admin", "field", "training"]);
 
 // Tables
 export const jurisdictions = pgTable("jurisdictions", {
@@ -69,6 +71,9 @@ export const employees = pgTable("employees", {
   department: text("department").notNull(),
   position: text("position").notNull(),
   salary: integer("salary"),
+  employmentType: employmentTypeEnum("employment_type").default("salaried").notNull(),
+  hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }),
+  overtimeMultiplier: decimal("overtime_multiplier", { precision: 3, scale: 2 }).default("1.5").notNull(),
   hireDate: timestamp("hire_date").notNull(),
   managerId: varchar("manager_id").references((): any => employees.id),
   isActive: boolean("is_active").default(true).notNull(),
@@ -79,10 +84,14 @@ export const timesheets = pgTable("timesheets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   employeeId: varchar("employee_id").references(() => employees.id).notNull(),
   weekEnding: date("week_ending").notNull(),
+  periodStart: date("period_start").notNull(),
   totalHours: decimal("total_hours", { precision: 5, scale: 2 }).default("0").notNull(),
   regularHours: decimal("regular_hours", { precision: 5, scale: 2 }).default("0").notNull(),
   overtimeHours: decimal("overtime_hours", { precision: 5, scale: 2 }).default("0").notNull(),
   status: timesheetStatusEnum("status").default("draft").notNull(),
+  comments: text("comments"),
+  managerComments: text("manager_comments"),
+  locked: boolean("locked").default(false).notNull(),
   submittedAt: timestamp("submitted_at"),
   approvedAt: timestamp("approved_at"),
   approvedById: varchar("approved_by_id").references(() => users.id),
@@ -90,13 +99,27 @@ export const timesheets = pgTable("timesheets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const projects = pgTable("projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  department: text("department").notNull(),
+  billable: boolean("billable").default(false).notNull(),
+  active: boolean("active").default(true).notNull(),
+  jurisdictionId: varchar("jurisdiction_id").references(() => jurisdictions.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const timesheetEntries = pgTable("timesheet_entries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   timesheetId: varchar("timesheet_id").references(() => timesheets.id).notNull(),
+  projectId: varchar("project_id").references(() => projects.id),
   workDate: date("work_date").notNull(),
   hoursWorked: decimal("hours_worked", { precision: 4, scale: 2 }).notNull(),
   overtimeHours: decimal("overtime_hours", { precision: 4, scale: 2 }).default("0").notNull(),
-  project: text("project"),
+  category: entryCategoryEnum("category").default("field").notNull(),
+  costCenter: text("cost_center"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -201,6 +224,12 @@ export const insertLeaveRequestSchema = createInsertSchema(leaveRequests).omit({
   updatedAt: true,
 });
 
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Employee Directory Schemas
 export const directoryFiltersSchema = z.object({
   query: z.string().optional(),
@@ -289,3 +318,40 @@ export type LeaveBalance = typeof leaveBalances.$inferSelect;
 
 export type InsertLeaveRequest = z.infer<typeof insertLeaveRequestSchema>;
 export type LeaveRequest = typeof leaveRequests.$inferSelect;
+
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Project = typeof projects.$inferSelect;
+
+// Extended timesheet entry with project information
+export type TimesheetEntryWithProject = TimesheetEntry & {
+  project?: Project;
+};
+
+// Timesheet with detailed entries and employee information
+export type DetailedTimesheet = Timesheet & {
+  entries: TimesheetEntryWithProject[];
+  employee: {
+    fullName: string;
+    employeeId: string;
+    department: string;
+    position: string;
+    hourlyRate?: string;
+    overtimeMultiplier: string;
+  };
+};
+
+// For payroll export functionality
+export type PayrollTimeEntry = {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  weekEnding: string;
+  regularHours: string;
+  overtimeHours: string;
+  regularRate?: string;
+  overtimeRate?: string;
+  grossPay?: string;
+  projectCode?: string;
+  projectName?: string;
+  category: "admin" | "field" | "training";
+};

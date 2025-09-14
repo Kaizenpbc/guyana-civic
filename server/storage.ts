@@ -16,7 +16,9 @@ import {
   type EmployeeDirectoryItem,
   type DirectoryFilters,
   type DirectoryResponse,
-  type OrgChartNode
+  type OrgChartNode,
+  type Project,
+  type InsertProject
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -74,6 +76,39 @@ export interface IStorage {
   listEmployees(filters: DirectoryFilters, requesterId: string): Promise<DirectoryResponse>;
   getEmployeeWithUser(id: string, requesterId: string): Promise<EmployeeDirectoryItem | undefined>;
   getOrgTree(rootEmployeeId?: string, depth?: number): Promise<OrgChartNode[]>;
+
+  // Project management methods
+  listProjects(jurisdictionId: string, activeOnly?: boolean): Promise<Project[]>;
+  getProject(id: string): Promise<Project | undefined>;
+  createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: string, updates: Partial<Project>): Promise<Project | undefined>;
+
+  // Enhanced timesheet management methods
+  submitTimesheet(id: string, submitterId: string): Promise<Timesheet | undefined>;
+  approveTimesheet(id: string, approverId: string, comments?: string): Promise<Timesheet | undefined>;
+  rejectTimesheet(id: string, approverId: string, comments: string): Promise<Timesheet | undefined>;
+  listManagedTimesheets(managerId: string, status?: "submitted" | "approved" | "rejected"): Promise<Timesheet[]>;
+  getTimesheetWithDetails(id: string, requesterId: string): Promise<{
+    timesheet: Timesheet;
+    entries: TimesheetEntry[];
+    employee: Employee;
+    projects: Project[];
+  } | undefined>;
+
+  // Payroll export methods
+  getApprovedHours(jurisdictionId: string, startDate: string, endDate: string): Promise<{
+    employeeId: string;
+    employeeName: string;
+    department: string;
+    weekEnding: string;
+    regularHours: string;
+    overtimeHours: string;
+    hourlyRate: string | null;
+    overtimeMultiplier: string;
+    projectCode: string | null;
+    projectName: string | null;
+    category: "admin" | "field" | "training";
+  }[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -84,6 +119,7 @@ export class MemStorage implements IStorage {
   private paystubs: Map<string, Paystub>;
   private leaveBalances: Map<string, LeaveBalance>;
   private leaveRequests: Map<string, LeaveRequest>;
+  private projects: Map<string, Project>;
 
   constructor() {
     this.users = new Map();
@@ -93,6 +129,7 @@ export class MemStorage implements IStorage {
     this.paystubs = new Map();
     this.leaveBalances = new Map();
     this.leaveRequests = new Map();
+    this.projects = new Map();
     
     // Initialize with some sample data
     this.initializeSampleData();
@@ -169,6 +206,9 @@ export class MemStorage implements IStorage {
         department: "Public Works",
         position: "Senior Engineer",
         salary: 75000,
+        employmentType: "hourly",
+        hourlyRate: "36.06",
+        overtimeMultiplier: "1.5",
         hireDate: new Date("2020-01-15"),
         managerId: "employee-2", // Reports to Sarah Smith
         isActive: true,
@@ -181,6 +221,9 @@ export class MemStorage implements IStorage {
         department: "Public Works",
         position: "Director of Public Works",
         salary: 95000,
+        employmentType: "salaried",
+        hourlyRate: null,
+        overtimeMultiplier: "1.5",
         hireDate: new Date("2018-03-10"),
         managerId: null, // Top level
         isActive: true,
@@ -193,6 +236,9 @@ export class MemStorage implements IStorage {
         department: "Human Resources",
         position: "HR Specialist",
         salary: 55000,
+        employmentType: "hourly",
+        hourlyRate: "26.44",
+        overtimeMultiplier: "1.5",
         hireDate: new Date("2021-06-20"),
         managerId: "employee-4", // Reports to Lisa Johnson
         isActive: true,
@@ -205,6 +251,9 @@ export class MemStorage implements IStorage {
         department: "Human Resources",
         position: "HR Manager",
         salary: 72000,
+        employmentType: "salaried",
+        hourlyRate: null,
+        overtimeMultiplier: "1.5",
         hireDate: new Date("2019-09-15"),
         managerId: null, // Top level
         isActive: true,
@@ -217,6 +266,9 @@ export class MemStorage implements IStorage {
         department: "Finance",
         position: "Accountant",
         salary: 58000,
+        employmentType: "salaried",
+        hourlyRate: null,
+        overtimeMultiplier: "1.5",
         hireDate: new Date("2017-11-30"),
         managerId: null, // Was top level but now inactive
         isActive: false,
@@ -226,6 +278,45 @@ export class MemStorage implements IStorage {
 
     employees.forEach(employee => this.employees.set(employee.id, employee));
 
+    // Create sample projects
+    const projects: Project[] = [
+      {
+        id: "project-1",
+        code: "PW-ROADS-2025",
+        name: "Road Maintenance 2025",
+        department: "Public Works",
+        billable: false,
+        active: true,
+        jurisdictionId: "jurisdiction-1",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: "project-2",
+        code: "PW-WATER-2025",
+        name: "Water Infrastructure",
+        department: "Public Works",
+        billable: true,
+        active: true,
+        jurisdictionId: "jurisdiction-1",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: "project-3",
+        code: "HR-TRAINING-2025",
+        name: "Employee Training Program",
+        department: "Human Resources",
+        billable: false,
+        active: true,
+        jurisdictionId: "jurisdiction-1",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    
+    projects.forEach(project => this.projects.set(project.id, project));
+
     // Use the first employee for timesheet data
     const sampleEmployee = employees[0];
     
@@ -234,14 +325,21 @@ export class MemStorage implements IStorage {
     const weekEnding = new Date(currentDate);
     weekEnding.setDate(currentDate.getDate() + (7 - currentDate.getDay()));
     
+    const periodStart = new Date(weekEnding);
+    periodStart.setDate(weekEnding.getDate() - 6);
+    
     const sampleTimesheet: Timesheet = {
       id: "timesheet-1",
       employeeId: "employee-1",
       weekEnding: weekEnding.toISOString().split('T')[0],
+      periodStart: periodStart.toISOString().split('T')[0],
       totalHours: "32.00",
       regularHours: "32.00",
       overtimeHours: "0.00",
       status: "draft",
+      comments: null,
+      managerComments: null,
+      locked: false,
       submittedAt: null,
       approvedAt: null,
       approvedById: null,
@@ -336,7 +434,10 @@ export class MemStorage implements IStorage {
       id,
       isActive: Boolean(insertEmployee.isActive ?? true),
       salary: insertEmployee.salary ? Number(insertEmployee.salary) : null,
-      managerId: insertEmployee.managerId ?? null
+      managerId: insertEmployee.managerId ?? null,
+      employmentType: insertEmployee.employmentType || "salaried",
+      hourlyRate: insertEmployee.hourlyRate || null,
+      overtimeMultiplier: insertEmployee.overtimeMultiplier || "1.5"
     };
     this.employees.set(id, employee);
     return employee;
@@ -392,6 +493,9 @@ export class MemStorage implements IStorage {
       regularHours: insertTimesheet.regularHours || "0.00",
       overtimeHours: insertTimesheet.overtimeHours || "0.00",
       status: insertTimesheet.status || "draft",
+      comments: insertTimesheet.comments || null,
+      managerComments: insertTimesheet.managerComments || null,
+      locked: insertTimesheet.locked || false,
       submittedAt: insertTimesheet.submittedAt || null,
       approvedAt: insertTimesheet.approvedAt || null,
       approvedById: insertTimesheet.approvedById || null
@@ -423,7 +527,9 @@ export class MemStorage implements IStorage {
       id, 
       createdAt: new Date(),
       overtimeHours: insertEntry.overtimeHours || "0.00",
-      project: insertEntry.project || null,
+      projectId: insertEntry.projectId || null,
+      category: insertEntry.category || "field",
+      costCenter: insertEntry.costCenter || null,
       notes: insertEntry.notes || null
     };
     this.timesheetEntries.set(id, entry);
@@ -711,6 +817,230 @@ export class MemStorage implements IStorage {
       .filter((node): node is OrgChartNode => node !== null);
 
     return topLevelEmployees;
+  }
+
+  // Project management methods
+  async listProjects(jurisdictionId: string, activeOnly = true): Promise<Project[]> {
+    return Array.from(this.projects.values())
+      .filter(project => 
+        project.jurisdictionId === jurisdictionId && 
+        (!activeOnly || project.active)
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getProject(id: string): Promise<Project | undefined> {
+    return this.projects.get(id);
+  }
+
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const id = randomUUID();
+    const now = new Date();
+    const project: Project = {
+      ...insertProject,
+      id,
+      billable: insertProject.billable ?? false,
+      active: insertProject.active ?? true,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.projects.set(id, project);
+    return project;
+  }
+
+  async updateProject(id: string, updates: Partial<Project>): Promise<Project | undefined> {
+    const existing = this.projects.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...updates, updatedAt: new Date() };
+    this.projects.set(id, updated);
+    return updated;
+  }
+
+  // Enhanced timesheet management methods
+  async submitTimesheet(id: string, submitterId: string): Promise<Timesheet | undefined> {
+    const timesheet = this.timesheets.get(id);
+    if (!timesheet || timesheet.status !== "draft") return undefined;
+
+    // Verify submitter owns this timesheet
+    const employee = await this.getEmployeeByUserId(submitterId);
+    if (!employee || employee.id !== timesheet.employeeId) return undefined;
+
+    // Server-side overtime calculation
+    const totalHours = parseFloat(timesheet.totalHours);
+    const overtimeHours = Math.max(0, totalHours - 40).toFixed(2);
+    const regularHours = Math.min(totalHours, 40).toFixed(2);
+
+    const updated = {
+      ...timesheet,
+      status: "submitted" as const,
+      submittedAt: new Date(),
+      regularHours,
+      overtimeHours,
+      updatedAt: new Date()
+    };
+    
+    this.timesheets.set(id, updated);
+    return updated;
+  }
+
+  async approveTimesheet(id: string, approverId: string, comments?: string): Promise<Timesheet | undefined> {
+    const timesheet = this.timesheets.get(id);
+    if (!timesheet || timesheet.status !== "submitted") return undefined;
+
+    // Verify approver is manager of the employee
+    const employee = await this.getEmployee(timesheet.employeeId);
+    const approverEmployee = await this.getEmployeeByUserId(approverId);
+    if (!employee || !approverEmployee || employee.managerId !== approverEmployee.id) {
+      return undefined;
+    }
+
+    const updated = {
+      ...timesheet,
+      status: "approved" as const,
+      approvedAt: new Date(),
+      approvedById: approverId,
+      managerComments: comments || null,
+      locked: true,
+      updatedAt: new Date()
+    };
+    
+    this.timesheets.set(id, updated);
+    return updated;
+  }
+
+  async rejectTimesheet(id: string, approverId: string, comments: string): Promise<Timesheet | undefined> {
+    const timesheet = this.timesheets.get(id);
+    if (!timesheet || timesheet.status !== "submitted") return undefined;
+
+    // Verify approver is manager of the employee
+    const employee = await this.getEmployee(timesheet.employeeId);
+    const approverEmployee = await this.getEmployeeByUserId(approverId);
+    if (!employee || !approverEmployee || employee.managerId !== approverEmployee.id) {
+      return undefined;
+    }
+
+    const updated = {
+      ...timesheet,
+      status: "rejected" as const,
+      approvedAt: new Date(),
+      approvedById: approverId,
+      managerComments: comments,
+      updatedAt: new Date()
+    };
+    
+    this.timesheets.set(id, updated);
+    return updated;
+  }
+
+  async listManagedTimesheets(managerId: string, status?: "submitted" | "approved" | "rejected"): Promise<Timesheet[]> {
+    const managerEmployee = await this.getEmployeeByUserId(managerId);
+    if (!managerEmployee) return [];
+
+    // Get all employees managed by this manager
+    const managedEmployees = Array.from(this.employees.values())
+      .filter(emp => emp.managerId === managerEmployee.id);
+    
+    const managedEmployeeIds = managedEmployees.map(emp => emp.id);
+    
+    return Array.from(this.timesheets.values())
+      .filter(ts => 
+        managedEmployeeIds.includes(ts.employeeId) &&
+        (!status || ts.status === status)
+      )
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }
+
+  async getTimesheetWithDetails(id: string, requesterId: string): Promise<{
+    timesheet: Timesheet;
+    entries: TimesheetEntry[];
+    employee: Employee;
+    projects: Project[];
+  } | undefined> {
+    const timesheet = this.timesheets.get(id);
+    if (!timesheet) return undefined;
+
+    const employee = await this.getEmployee(timesheet.employeeId);
+    if (!employee) return undefined;
+
+    // Check authorization: employee owns it OR manager manages the employee
+    const requesterEmployee = await this.getEmployeeByUserId(requesterId);
+    if (!requesterEmployee) return undefined;
+
+    const isOwner = requesterEmployee.id === employee.id;
+    const isManager = employee.managerId === requesterEmployee.id;
+    
+    if (!isOwner && !isManager) return undefined;
+
+    const entries = await this.getTimesheetEntries(id);
+    const projects = await this.listProjects(employee.jurisdictionId);
+
+    return {
+      timesheet,
+      entries,
+      employee,
+      projects
+    };
+  }
+
+  // Payroll export methods
+  async getApprovedHours(jurisdictionId: string, startDate: string, endDate: string): Promise<{
+    employeeId: string;
+    employeeName: string;
+    department: string;
+    weekEnding: string;
+    regularHours: string;
+    overtimeHours: string;
+    hourlyRate: string | null;
+    overtimeMultiplier: string;
+    projectCode: string | null;
+    projectName: string | null;
+    category: "admin" | "field" | "training";
+  }[]> {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Get all approved timesheets in date range for jurisdiction
+    const approvedTimesheets = Array.from(this.timesheets.values())
+      .filter(ts => {
+        const weekEnding = new Date(ts.weekEnding);
+        return ts.status === "approved" && 
+               weekEnding >= start && 
+               weekEnding <= end;
+      });
+
+    const results = [];
+    
+    for (const timesheet of approvedTimesheets) {
+      const employee = await this.getEmployee(timesheet.employeeId);
+      if (!employee || employee.jurisdictionId !== jurisdictionId) continue;
+
+      const user = await this.getUser(employee.userId);
+      if (!user) continue;
+
+      const entries = await this.getTimesheetEntries(timesheet.id);
+      
+      // Group entries by project and category
+      for (const entry of entries) {
+        const project = entry.projectId ? await this.getProject(entry.projectId) : null;
+        
+        results.push({
+          employeeId: employee.employeeId,
+          employeeName: user.fullName,
+          department: employee.department,
+          weekEnding: timesheet.weekEnding,
+          regularHours: timesheet.regularHours,
+          overtimeHours: timesheet.overtimeHours,
+          hourlyRate: employee.hourlyRate,
+          overtimeMultiplier: employee.overtimeMultiplier,
+          projectCode: project?.code || null,
+          projectName: project?.name || null,
+          category: entry.category
+        });
+      }
+    }
+    
+    return results;
   }
 }
 
