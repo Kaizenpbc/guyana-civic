@@ -4,7 +4,7 @@ import { Home, ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   const handleGoHome = () => {
-    console.log('Navigate to home');
+    window.location.href = '/';
   };
 
   const handleGoBack = () => {

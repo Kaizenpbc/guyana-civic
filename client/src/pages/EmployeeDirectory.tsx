@@ -117,8 +117,8 @@ export default function EmployeeDirectory() {
   };
 
   const handleEditEmployee = (id: string) => {
-    console.log('Edit employee:', id);
     // TODO: Navigate to employee edit page
+    alert(`Edit employee: ${id}`);
   };
 
   const clearFilters = () => {

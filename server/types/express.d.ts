@@ -15,3 +15,17 @@ declare global {
     }
   }
 }
+
+// Augment express-session to include user in session data
+declare module "express-session" {
+  interface SessionData {
+    user?: {
+      id: string;
+      username: string;
+      email: string;
+      fullName: string;
+      role: string;
+      jurisdictionId?: string;
+    };
+  }
+}

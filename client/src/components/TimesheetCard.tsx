@@ -28,8 +28,8 @@ interface TimesheetCardProps {
 const statusColors = {
   draft: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
   submitted: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-  approved: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-  rejected: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+  approved: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary",
+  rejected: "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive",
 };
 
 export default function TimesheetCard({
@@ -87,7 +87,7 @@ export default function TimesheetCard({
           
           <div className="text-center">
             <div className="text-sm text-muted-foreground mb-1">Regular</div>
-            <div className="text-xl font-semibold text-green-600">{regularHours}</div>
+            <div className="text-xl font-semibold text-primary">{regularHours}</div>
           </div>
           
           <div className="text-center">

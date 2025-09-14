@@ -6,17 +6,19 @@
 ## Core Design Elements
 
 ### A. Color Palette
-**Primary Colors:**
-- Light Mode: Deep civic blue (215 75% 35%) for trust and authority
-- Dark Mode: Softer blue (215 60% 45%) for accessibility
-- Success: Forest green (145 70% 40%) for resolved issues
-- Warning: Amber (35 90% 55%) for pending items
-- Error: Crimson (355 75% 50%) for urgent issues
+**Guyanese Flag-Inspired Colors:**
+- Primary Green: #009739 (Guyanese flag green) for trust and authority
+- Secondary Yellow: #FFD100 (Guyanese flag yellow) for highlights and warnings
+- Accent Red: #EF3340 (Guyanese flag red) for urgent items and errors
+- Success Green: #009739 (same as primary) for resolved issues
+- Warning Yellow: #FFD100 (same as secondary) for pending items
+- Error Red: #EF3340 (same as accent) for urgent issues
 
 **Neutral Colors:**
-- Light backgrounds with warm gray tones (210 15% 97%)
-- Dark mode with cool charcoal (215 25% 15%)
-- Text hierarchy using varying opacity levels
+- Light backgrounds with warm white tones (#FFFFFF)
+- Dark mode with rich charcoal (#1a1a1a)
+- Text hierarchy using Guyanese colors with varying opacity levels
+- Black accents (#000000) for strong contrast elements
 
 ### B. Typography
 **Font Stack:** Inter via Google Fonts CDN

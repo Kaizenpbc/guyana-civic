@@ -17,18 +17,18 @@ interface IssueCardProps {
 }
 
 const priorityColors = {
-  low: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-  medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+  low: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary",
+  medium: "bg-secondary/10 text-secondary-foreground dark:bg-secondary/20 dark:text-secondary-foreground",
   high: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
-  urgent: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+  urgent: "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive",
 };
 
 const statusConfig = {
-  submitted: { icon: AlertCircle, color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400" },
-  acknowledged: { icon: Clock, color: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400" },
+  submitted: { icon: AlertCircle, color: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary" },
+  acknowledged: { icon: Clock, color: "bg-secondary/10 text-secondary-foreground dark:bg-secondary/20 dark:text-secondary-foreground" },
   in_progress: { icon: Clock, color: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400" },
-  resolved: { icon: CheckCircle, color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" },
-  closed: { icon: CheckCircle, color: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400" },
+  resolved: { icon: CheckCircle, color: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary" },
+  closed: { icon: CheckCircle, color: "bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground" },
 };
 
 export default function IssueCard({

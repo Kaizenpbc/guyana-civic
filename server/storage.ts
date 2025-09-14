@@ -18,7 +18,13 @@ import {
   type DirectoryResponse,
   type OrgChartNode,
   type Project,
-  type InsertProject
+  type InsertProject,
+  type Jurisdiction,
+  type InsertJurisdiction,
+  type Issue,
+  type InsertIssue,
+  type Announcement,
+  type InsertAnnouncement
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -26,6 +32,17 @@ import { randomUUID } from "crypto";
 // you might need
 
 export interface IStorage {
+  // Jurisdiction methods
+  listJurisdictions(): Promise<Jurisdiction[]>;
+  getJurisdiction(id: string): Promise<Jurisdiction | undefined>;
+  
+  // Issue methods
+  listIssues(jurisdictionId: string, filters?: { status?: string; category?: string; page?: number; limit?: number }): Promise<Issue[]>;
+  createIssue(issue: InsertIssue): Promise<Issue>;
+  
+  // Announcement methods
+  listAnnouncements(jurisdictionId: string): Promise<Announcement[]>;
+  
   // User methods
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -112,6 +129,9 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private jurisdictions: Map<string, Jurisdiction>;
+  private issues: Map<string, Issue>;
+  private announcements: Map<string, Announcement>;
   private users: Map<string, User>;
   private employees: Map<string, Employee>;
   private timesheets: Map<string, Timesheet>;
@@ -122,6 +142,9 @@ export class MemStorage implements IStorage {
   private projects: Map<string, Project>;
 
   constructor() {
+    this.jurisdictions = new Map();
+    this.issues = new Map();
+    this.announcements = new Map();
     this.users = new Map();
     this.employees = new Map();
     this.timesheets = new Map();
@@ -136,6 +159,111 @@ export class MemStorage implements IStorage {
   }
   
   private initializeSampleData() {
+    // Create sample jurisdictions
+    const jurisdictions: Jurisdiction[] = [
+      {
+        id: "metro-central",
+        name: "Metro Central District",
+        description: "Central business district managing commercial zones, transportation infrastructure, and downtown public services.",
+        contactEmail: "info@metrocentral.gov",
+        contactPhone: "+1 (555) 123-4567",
+        address: "100 City Hall Plaza, Metro Central",
+        createdAt: new Date()
+      },
+      {
+        id: "riverside-municipal",
+        name: "Riverside Municipal Council",
+        description: "Residential area council responsible for parks, community centers, and local road maintenance.",
+        contactEmail: "contact@riverside.municipal.gov",
+        contactPhone: "+1 (555) 987-6543",
+        address: "45 Riverside Community Center, Riverside",
+        createdAt: new Date()
+      },
+      {
+        id: "northside-township",
+        name: "Northside Township",
+        description: "Industrial and residential mixed-use area managing utilities, waste services, and community development.",
+        contactEmail: "admin@northside.township.gov",
+        contactPhone: "+1 (555) 456-7890",
+        address: "200 Industrial Blvd, Northside",
+        createdAt: new Date()
+      }
+    ];
+    jurisdictions.forEach(jurisdiction => this.jurisdictions.set(jurisdiction.id, jurisdiction));
+
+    // Create sample issues
+    const issues: Issue[] = [
+      {
+        id: "issue-1",
+        title: "Pothole on Main Street causing traffic delays",
+        description: "Large pothole near the intersection of Main Street and Oak Avenue is causing significant traffic delays and potential vehicle damage.",
+        category: "roads",
+        priority: "high",
+        status: "in_progress",
+        location: "Main Street & Oak Avenue",
+        citizenId: "citizen-1",
+        jurisdictionId: "metro-central",
+        assignedToId: "user-1",
+        resolutionNotes: null,
+        createdAt: new Date("2024-01-15"),
+        updatedAt: new Date("2024-01-15")
+      },
+      {
+        id: "issue-2",
+        title: "Street light outage in residential area",
+        description: "Multiple street lights are out on Elm Street, creating safety concerns for evening pedestrians.",
+        category: "lighting",
+        priority: "medium",
+        status: "acknowledged",
+        location: "Elm Street (100-200 block)",
+        citizenId: "citizen-2",
+        jurisdictionId: "metro-central",
+        assignedToId: null,
+        resolutionNotes: null,
+        createdAt: new Date("2024-01-12"),
+        updatedAt: new Date("2024-01-12")
+      },
+      {
+        id: "issue-3",
+        title: "Drainage system backup after heavy rain",
+        description: "Storm drain near the community center is backing up during heavy rain, causing flooding.",
+        category: "drainage",
+        priority: "urgent",
+        status: "submitted",
+        location: "Community Center Parking Area",
+        citizenId: "citizen-3",
+        jurisdictionId: "metro-central",
+        assignedToId: null,
+        resolutionNotes: null,
+        createdAt: new Date("2024-01-18"),
+        updatedAt: new Date("2024-01-18")
+      }
+    ];
+    issues.forEach(issue => this.issues.set(issue.id, issue));
+
+    // Create sample announcements
+    const announcements: Announcement[] = [
+      {
+        id: "ann-1",
+        title: "Road Maintenance Schedule - Main Street",
+        content: "Main Street will undergo scheduled maintenance from January 25-27. Traffic will be diverted through Oak Avenue during construction hours.",
+        jurisdictionId: "metro-central",
+        authorId: "user-2",
+        isActive: true,
+        createdAt: new Date("2024-01-20")
+      },
+      {
+        id: "ann-2",
+        title: "Community Meeting - February Budget Planning",
+        content: "Join us for the annual budget planning meeting on February 15th at 7 PM in the Community Center.",
+        jurisdictionId: "metro-central",
+        authorId: "user-2",
+        isActive: true,
+        createdAt: new Date("2024-01-18")
+      }
+    ];
+    announcements.forEach(announcement => this.announcements.set(announcement.id, announcement));
+
     // Create sample users
     const users: User[] = [
       {
@@ -1042,6 +1170,68 @@ export class MemStorage implements IStorage {
     
     return results;
   }
+
+  // Jurisdiction methods
+  async listJurisdictions(): Promise<Jurisdiction[]> {
+    return Array.from(this.jurisdictions.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getJurisdiction(id: string): Promise<Jurisdiction | undefined> {
+    return this.jurisdictions.get(id);
+  }
+
+  // Issue methods
+  async listIssues(jurisdictionId: string, filters?: { status?: string; category?: string; page?: number; limit?: number }): Promise<Issue[]> {
+    let issues = Array.from(this.issues.values())
+      .filter(issue => issue.jurisdictionId === jurisdictionId);
+
+    if (filters?.status && filters.status !== "all") {
+      issues = issues.filter(issue => issue.status === filters.status);
+    }
+
+    if (filters?.category && filters.category !== "all") {
+      issues = issues.filter(issue => issue.category === filters.category);
+    }
+
+    issues.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    if (filters?.page && filters?.limit) {
+      const startIndex = (filters.page - 1) * filters.limit;
+      const endIndex = startIndex + filters.limit;
+      issues = issues.slice(startIndex, endIndex);
+    }
+
+    return issues;
+  }
+
+  async createIssue(insertIssue: InsertIssue): Promise<Issue> {
+    const id = randomUUID();
+    const now = new Date();
+    const issue: Issue = {
+      ...insertIssue,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      priority: insertIssue.priority || "medium",
+      status: insertIssue.status || "submitted",
+      assignedToId: insertIssue.assignedToId || null,
+      resolutionNotes: insertIssue.resolutionNotes || null
+    };
+    this.issues.set(id, issue);
+    return issue;
+  }
+
+  // Announcement methods
+  async listAnnouncements(jurisdictionId: string): Promise<Announcement[]> {
+    return Array.from(this.announcements.values())
+      .filter(announcement => 
+        announcement.jurisdictionId === jurisdictionId && 
+        announcement.isActive
+      )
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
 }
 
 export const storage = new MemStorage();

@@ -32,15 +32,15 @@
 
   --sidebar-border: 210 12% 86%;
 
-  --sidebar-primary: 215 75% 35%;
+  --sidebar-primary: 145 100% 30%; /* Guyanese Green */
 
-  --sidebar-primary-foreground: 210 15% 97%;
+  --sidebar-primary-foreground: 0 0% 100%; /* White text */
 
-  --sidebar-accent: 210 15% 89%;
+  --sidebar-accent: 50 100% 50%; /* Guyanese Yellow */
 
-  --sidebar-accent-foreground: 215 25% 20%;
+  --sidebar-accent-foreground: 0 0% 0%; /* Black text */
 
-  --sidebar-ring: 215 75% 35%;
+  --sidebar-ring: 145 100% 30%; /* Guyanese Green */
 
   --popover: 210 15% 91%;
 
@@ -48,33 +48,33 @@
 
   --popover-border: 210 12% 84%;
 
-  --primary: 215 75% 35%;
+  --primary: 145 100% 30%; /* Guyanese Green #009739 */
 
-  --primary-foreground: 210 15% 97%;
+  --primary-foreground: 0 0% 100%; /* White text on green */
 
-  --secondary: 210 15% 87%;
+  --secondary: 50 100% 50%; /* Guyanese Yellow #FFD100 */
 
-  --secondary-foreground: 215 25% 20%;
+  --secondary-foreground: 0 0% 0%; /* Black text on yellow */
 
-  --muted: 210 8% 85%;
+  --muted: 0 0% 95%; /* Light gray */
 
-  --muted-foreground: 215 12% 45%;
+  --muted-foreground: 0 0% 45%; /* Dark gray text */
 
-  --accent: 210 12% 89%;
+  --accent: 50 100% 50%; /* Guyanese Yellow for accents */
 
-  --accent-foreground: 215 25% 20%;
+  --accent-foreground: 0 0% 0%; /* Black text on yellow */
 
-  --destructive: 355 75% 50%;
+  --destructive: 350 85% 55%; /* Guyanese Red #EF3340 */
 
-  --destructive-foreground: 210 15% 97%;
+  --destructive-foreground: 0 0% 100%; /* White text on red */
 
-  --input: 210 20% 80%;
-  --ring: 215 75% 35%;
-  --chart-1: 215 75% 35%;
-  --chart-2: 145 70% 40%;
-  --chart-3: 35 90% 55%;
-  --chart-4: 355 75% 50%;
-  --chart-5: 260 60% 45%;
+  --input: 0 0% 90%;
+  --ring: 145 100% 30%; /* Guyanese Green */
+  --chart-1: 145 100% 30%; /* Guyanese Green */
+  --chart-2: 50 100% 50%; /* Guyanese Yellow */
+  --chart-3: 350 85% 55%; /* Guyanese Red */
+  --chart-4: 0 0% 40%; /* Dark gray */
+  --chart-5: 0 0% 60%; /* Medium gray */
 
   --font-sans: Inter, Open Sans, sans-serif;
   --font-serif: Georgia, serif;
@@ -150,50 +150,50 @@
 
   --sidebar-border: 215 20% 26%;
 
-  --sidebar-primary: 215 60% 45%;
+  --sidebar-primary: 145 100% 40%; /* Lighter Guyanese Green for dark mode */
 
-  --sidebar-primary-foreground: 210 15% 90%;
+  --sidebar-primary-foreground: 0 0% 100%; /* White text */
 
-  --sidebar-accent: 215 20% 25%;
+  --sidebar-accent: 50 100% 60%; /* Lighter Guyanese Yellow for dark mode */
 
-  --sidebar-accent-foreground: 210 15% 90%;
+  --sidebar-accent-foreground: 0 0% 0%; /* Black text */
 
-  --sidebar-ring: 215 60% 45%;
+  --sidebar-ring: 145 100% 40%; /* Lighter Guyanese Green */
 
-  --popover: 215 25% 21%;
+  --popover: 0 0% 15%; /* Dark background */
 
-  --popover-foreground: 210 15% 90%;
+  --popover-foreground: 0 0% 90%; /* Light text */
 
-  --popover-border: 215 20% 28%;
+  --popover-border: 0 0% 25%; /* Dark border */
 
-  --primary: 215 60% 45%;
+  --primary: 145 100% 40%; /* Lighter Guyanese Green for dark mode */
 
-  --primary-foreground: 210 15% 90%;
+  --primary-foreground: 0 0% 100%; /* White text */
 
-  --secondary: 215 20% 27%;
+  --secondary: 50 100% 60%; /* Lighter Guyanese Yellow for dark mode */
 
-  --secondary-foreground: 210 15% 90%;
+  --secondary-foreground: 0 0% 0%; /* Black text */
 
-  --muted: 215 15% 23%;
+  --muted: 0 0% 20%; /* Dark muted background */
 
-  --muted-foreground: 210 8% 65%;
+  --muted-foreground: 0 0% 65%; /* Medium gray text */
 
-  --accent: 215 20% 25%;
+  --accent: 50 100% 60%; /* Lighter Guyanese Yellow for dark mode */
 
-  --accent-foreground: 210 15% 90%;
+  --accent-foreground: 0 0% 0%; /* Black text */
 
-  --destructive: 355 75% 50%;
+  --destructive: 350 85% 65%; /* Lighter Guyanese Red for dark mode */
 
-  --destructive-foreground: 210 15% 90%;
+  --destructive-foreground: 0 0% 100%; /* White text */
 
   /* Used as the border around inputs. Dark mode: Should be a border that is light enough to have high contrast when rendered on a --card background. More contrast than standard --border */
-  --input: 215 20% 35%;
-  --ring: 215 60% 45%;
-  --chart-1: 215 60% 60%;
-  --chart-2: 145 55% 60%;
-  --chart-3: 35 85% 65%;
-  --chart-4: 355 65% 65%;
-  --chart-5: 260 50% 65%;
+  --input: 0 0% 30%;
+  --ring: 145 100% 40%; /* Lighter Guyanese Green */
+  --chart-1: 145 100% 40%; /* Lighter Guyanese Green */
+  --chart-2: 50 100% 60%; /* Lighter Guyanese Yellow */
+  --chart-3: 350 85% 65%; /* Lighter Guyanese Red */
+  --chart-4: 0 0% 50%; /* Medium gray */
+  --chart-5: 0 0% 70%; /* Light gray */
 
   --shadow-2xs: 0px 2px 0px 0px hsl(215 30% 5% / 0.20);
   --shadow-xs: 0px 2px 0px 0px hsl(215 30% 5% / 0.25);

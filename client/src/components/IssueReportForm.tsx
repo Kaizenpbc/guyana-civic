@@ -1,15 +1,39 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Camera, Send } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MapPin, Camera, Send, CheckCircle, AlertCircle } from "lucide-react";
 
 interface IssueReportFormProps {
-  onSubmit: (issueData: any) => void;
+  jurisdictionId: string;
+  onSubmit?: (issueData: any) => void;
   onCancel?: () => void;
+}
+
+interface IssueSubmissionData {
+  title: string;
+  description: string;
+  category: string;
+  priority: string;
+  location: string;
+}
+
+interface IssueSubmissionResponse {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  priority: string;
+  status: string;
+  location: string;
+  citizenId: string;
+  jurisdictionId: string;
+  createdAt: string;
 }
 
 const categories = [
@@ -29,7 +53,25 @@ const priorities = [
   { value: "urgent", label: "Urgent" },
 ];
 
-export default function IssueReportForm({ onSubmit, onCancel }: IssueReportFormProps) {
+// API function to submit issue
+const submitIssue = async (jurisdictionId: string, issueData: IssueSubmissionData): Promise<IssueSubmissionResponse> => {
+  const response = await fetch(`/api/jurisdictions/${jurisdictionId}/issues`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(issueData),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to submit issue');
+  }
+
+  return response.json();
+};
+
+export default function IssueReportForm({ jurisdictionId, onSubmit, onCancel }: IssueReportFormProps) {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -37,11 +79,21 @@ export default function IssueReportForm({ onSubmit, onCancel }: IssueReportFormP
     priority: "medium",
     location: "",
   });
+  
+  const queryClient = useQueryClient();
+  
+  const submitMutation = useMutation({
+    mutationFn: (data: IssueSubmissionData) => submitIssue(jurisdictionId, data),
+    onSuccess: (data) => {
+      // Invalidate and refetch issues
+      queryClient.invalidateQueries({ queryKey: ['issues', jurisdictionId] });
+      onSubmit?.(data);
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-    console.log('Issue report submitted:', formData);
+    submitMutation.mutate(formData);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -61,6 +113,24 @@ export default function IssueReportForm({ onSubmit, onCancel }: IssueReportFormP
       </CardHeader>
       
       <CardContent>
+        {submitMutation.isSuccess && (
+          <Alert className="mb-6">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>
+              Issue submitted successfully! Your report has been received and will be reviewed by our team.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {submitMutation.isError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {submitMutation.error instanceof Error ? submitMutation.error.message : 'Failed to submit issue. Please try again.'}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="title">Issue Title *</Label>
@@ -151,12 +221,32 @@ export default function IssueReportForm({ onSubmit, onCancel }: IssueReportFormP
           </div>
 
           <div className="flex gap-4 pt-4">
-            <Button type="submit" className="flex-1" data-testid="button-submit-issue">
-              <Send className="h-4 w-4 mr-2" />
-              Submit Report
+            <Button 
+              type="submit" 
+              className="flex-1" 
+              disabled={submitMutation.isPending}
+              data-testid="button-submit-issue"
+            >
+              {submitMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Submit Report
+                </>
+              )}
             </Button>
             {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel} data-testid="button-cancel">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onCancel} 
+                disabled={submitMutation.isPending}
+                data-testid="button-cancel"
+              >
                 Cancel
               </Button>
             )}

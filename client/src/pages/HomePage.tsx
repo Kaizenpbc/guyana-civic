@@ -1,75 +1,107 @@
 import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building, Search, Plus, AlertCircle, Users, MapPin } from "lucide-react";
+import { Building, Search, Plus, AlertCircle, Users, MapPin, LogOut } from "lucide-react";
 import JurisdictionCard from "@/components/JurisdictionCard";
 import StatsCard from "@/components/StatsCard";
 import AnnouncementCard from "@/components/AnnouncementCard";
 
-//todo: remove mock functionality
-const mockJurisdictions = [
-  {
-    id: "metro-central",
-    name: "Metro Central District",
-    description: "Central business district managing commercial zones, transportation infrastructure, and downtown public services.",
-    contactEmail: "info@metrocentral.gov",
-    contactPhone: "+1 (555) 123-4567",
-    address: "100 City Hall Plaza, Metro Central",
-    issueCount: 23,
-  },
-  {
-    id: "riverside-municipal",
-    name: "Riverside Municipal Council",
-    description: "Residential area council responsible for parks, community centers, and local road maintenance.",
-    contactEmail: "contact@riverside.municipal.gov",
-    contactPhone: "+1 (555) 987-6543",
-    address: "45 Riverside Community Center, Riverside",
-    issueCount: 8,
-  },
-  {
-    id: "northside-township",
-    name: "Northside Township",
-    description: "Industrial and residential mixed-use area managing utilities, waste services, and community development.",
-    contactEmail: "admin@northside.township.gov",
-    contactPhone: "+1 (555) 456-7890",
-    address: "200 Industrial Blvd, Northside",
-    issueCount: 15,
-  },
-];
+// Types
+interface Jurisdiction {
+  id: string;
+  name: string;
+  description: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  createdAt: string;
+}
 
-//todo: remove mock functionality
-const mockAnnouncements = [
-  {
-    id: "ann-1",
-    title: "Road Maintenance Schedule - Main Street",
-    content: "Main Street will undergo scheduled maintenance from January 25-27. Traffic will be diverted through Oak Avenue during construction hours.",
-    authorName: "City Works Department",
-    createdAt: "2024-01-20",
-    isActive: true,
-  },
-  {
-    id: "ann-2",
-    title: "Community Meeting - February Budget Planning",
-    content: "Join us for the annual budget planning meeting on February 15th at 7 PM in the Community Center.",
-    authorName: "Mayor Sarah Wilson",
-    createdAt: "2024-01-18",
-    isActive: true,
-  },
-];
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  jurisdictionId: string;
+  authorId: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// API functions
+const fetchJurisdictions = async (): Promise<Jurisdiction[]> => {
+  const response = await fetch('/api/jurisdictions');
+  if (!response.ok) throw new Error('Failed to fetch jurisdictions');
+  return response.json();
+};
+
+const fetchAnnouncements = async (jurisdictionId: string): Promise<Announcement[]> => {
+  const response = await fetch(`/api/jurisdictions/${jurisdictionId}/announcements`);
+  if (!response.ok) throw new Error('Failed to fetch announcements');
+  return response.json();
+};
+
+const getCurrentUser = async (): Promise<{ user: any }> => {
+  const response = await fetch('/api/auth/me');
+  if (!response.ok) {
+    throw new Error('Not authenticated');
+  }
+  return response.json();
+};
+
+const logoutUser = async (): Promise<void> => {
+  const response = await fetch('/api/auth/logout', { method: 'POST' });
+  if (!response.ok) {
+    throw new Error('Logout failed');
+  }
+};
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const queryClient = useQueryClient();
+
+  // Check authentication
+  const { data: authData, isLoading: authLoading } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: getCurrentUser,
+    retry: false,
+  });
+
+  // Fetch jurisdictions from API
+  const { data: jurisdictions = [], isLoading: jurisdictionsLoading, error: jurisdictionsError } = useQuery({
+    queryKey: ['jurisdictions'],
+    queryFn: fetchJurisdictions,
+  });
+
+  // Fetch announcements from the first jurisdiction (for demo)
+  const { data: announcements = [] } = useQuery({
+    queryKey: ['announcements', jurisdictions[0]?.id],
+    queryFn: () => fetchAnnouncements(jurisdictions[0]?.id),
+    enabled: !!jurisdictions[0]?.id,
+  });
 
   const handleJurisdictionSelect = (id: string) => {
-    console.log('Navigate to jurisdiction:', id);
+    // TODO: Implement navigation to jurisdiction portal
+    window.location.href = `/jurisdiction/${id}`;
   };
 
   const handleQuickReport = () => {
-    console.log('Open quick report modal');
+    // TODO: Implement quick report modal
+    alert('Quick report feature coming soon!');
   };
 
-  const filteredJurisdictions = mockJurisdictions.filter(jurisdiction =>
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      queryClient.clear();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const filteredJurisdictions = jurisdictions.filter((jurisdiction) =>
     jurisdiction.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     jurisdiction.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -87,10 +119,29 @@ export default function HomePage() {
                 <p className="text-sm text-muted-foreground">Citizen Services & Administrative Management</p>
               </div>
             </div>
-            <Button onClick={handleQuickReport} data-testid="button-quick-report">
-              <Plus className="h-4 w-4 mr-2" />
-              Quick Report
-            </Button>
+            <div className="flex items-center gap-3">
+              {authData?.user && (
+                <div className="text-right">
+                  <p className="text-sm font-medium">Welcome, {authData.user.fullName}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{authData.user.role}</p>
+                </div>
+              )}
+              <Button onClick={handleQuickReport} data-testid="button-quick-report">
+                <Plus className="h-4 w-4 mr-2" />
+                Quick Report
+              </Button>
+              {authData?.user ? (
+                <Button variant="outline" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => window.location.href = '/login'}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -154,29 +205,54 @@ export default function HomePage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Local Jurisdictions</h2>
               <span className="text-sm text-muted-foreground">
-                {filteredJurisdictions.length} of {mockJurisdictions.length} jurisdictions
+                {filteredJurisdictions.length} of {jurisdictions.length} jurisdictions
               </span>
             </div>
             
             <div className="space-y-4">
-              {filteredJurisdictions.map((jurisdiction) => (
-                <JurisdictionCard
-                  key={jurisdiction.id}
-                  {...jurisdiction}
-                  onSelect={handleJurisdictionSelect}
-                />
-              ))}
-              
-              {filteredJurisdictions.length === 0 && (
+              {jurisdictionsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-6">
+                        <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-muted rounded w-1/2"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : jurisdictionsError ? (
                 <Card className="text-center py-8">
                   <CardContent>
-                    <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No jurisdictions found</h3>
+                    <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Error loading jurisdictions</h3>
                     <p className="text-muted-foreground">
-                      Try adjusting your search terms or browse all available jurisdictions.
+                      Please try refreshing the page.
                     </p>
                   </CardContent>
                 </Card>
+              ) : (
+                <>
+                  {filteredJurisdictions.map((jurisdiction) => (
+                    <JurisdictionCard
+                      key={jurisdiction.id}
+                      {...jurisdiction}
+                      onSelect={handleJurisdictionSelect}
+                    />
+                  ))}
+                  
+                  {filteredJurisdictions.length === 0 && (
+                    <Card className="text-center py-8">
+                      <CardContent>
+                        <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No jurisdictions found</h3>
+                        <p className="text-muted-foreground">
+                          Try adjusting your search terms or browse all available jurisdictions.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -185,9 +261,24 @@ export default function HomePage() {
           <div>
             <h2 className="text-xl font-semibold mb-6">Latest Announcements</h2>
             <div className="space-y-4">
-              {mockAnnouncements.map((announcement) => (
-                <AnnouncementCard key={announcement.id} {...announcement} />
+              {announcements.map((announcement) => (
+                <AnnouncementCard 
+                  key={announcement.id} 
+                  id={announcement.id}
+                  title={announcement.title}
+                  content={announcement.content}
+                  authorName="City Works Department" // TODO: Get from user data
+                  createdAt={announcement.createdAt}
+                  isActive={announcement.isActive}
+                />
               ))}
+              {announcements.length === 0 && (
+                <Card className="text-center py-8">
+                  <CardContent>
+                    <p className="text-muted-foreground">No announcements available</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Quick Actions */}
@@ -196,11 +287,11 @@ export default function HomePage() {
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start" data-testid="button-report-issue">
+                <Button className="w-full justify-start" data-testid="button-report-issue">
                   <AlertCircle className="h-4 w-4 mr-2" />
                   Report an Issue
                 </Button>
-                <Button variant="outline" className="w-full justify-start" data-testid="button-track-request">
+                <Button variant="secondary" className="w-full justify-start" data-testid="button-track-request">
                   <Search className="h-4 w-4 mr-2" />
                   Track Service Request
                 </Button>

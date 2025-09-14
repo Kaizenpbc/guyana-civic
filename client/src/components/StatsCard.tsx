@@ -33,7 +33,7 @@ export default function StatsCard({
           <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}
         {trend && (
-          <p className={`text-xs mt-1 ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-xs mt-1 ${trend.isPositive ? 'text-primary' : 'text-destructive'}`}>
             {trend.isPositive ? '+' : ''}{trend.value}% from last month
           </p>
         )}

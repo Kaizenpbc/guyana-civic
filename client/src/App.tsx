@@ -9,12 +9,14 @@ import HomePage from "@/pages/HomePage";
 import JurisdictionPortal from "@/pages/JurisdictionPortal";
 import EmployeeDashboard from "@/pages/EmployeeDashboard";
 import EmployeeDirectory from "@/pages/EmployeeDirectory";
+import LoginPage from "@/pages/LoginPage";
 import NotFound from "@/pages/NotFound";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
+      <Route path="/login" component={LoginPage} />
       <Route path="/jurisdiction/:id" component={JurisdictionPortal} />
       <Route path="/staff/dashboard" component={EmployeeDashboard} />
       <Route path="/staff/directory" component={EmployeeDirectory} />

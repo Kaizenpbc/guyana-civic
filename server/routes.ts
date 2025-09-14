@@ -7,16 +7,14 @@ import {
   insertLeaveRequestSchema,
   directoryFiltersSchema
 } from "@shared/schema";
+import session from "express-session";
 
-// Basic auth middleware - stub for now
+// Authentication middleware
 const requireAuth = (req: any, res: any, next: any) => {
-  // For demo purposes, assume user is authenticated
-  // In real implementation, check JWT/session
-  req.user = { 
-    id: "user-1", 
-    role: "staff",
-    employeeId: "employee-1" 
-  };
+  if (!req.session?.user) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  req.user = req.session.user;
   next();
 };
 
@@ -29,6 +27,129 @@ const requireStaff = (req: any, res: any, next: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Authentication endpoints
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password required" });
+      }
+      
+      // Simple demo authentication - in real app, hash passwords and check database
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // For demo, accept any password. In real app, verify password hash
+      req.session.user = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        jurisdictionId: user.jurisdictionId || undefined
+      };
+      
+      res.json({ 
+        user: req.session.user,
+        message: "Login successful" 
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Could not log out" });
+      }
+      res.json({ message: "Logout successful" });
+    });
+  });
+
+  app.get("/api/auth/me", (req, res) => {
+    if (req.session?.user) {
+      res.json({ user: req.session.user });
+    } else {
+      res.status(401).json({ error: "Not authenticated" });
+    }
+  });
+
+  // Public/Citizen endpoints (no auth required)
+  app.get("/api/jurisdictions", async (req, res) => {
+    try {
+      const jurisdictions = await storage.listJurisdictions();
+      res.json(jurisdictions);
+    } catch (error) {
+      console.error("Error fetching jurisdictions:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/jurisdictions/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const jurisdiction = await storage.getJurisdiction(id);
+      if (!jurisdiction) {
+        return res.status(404).json({ error: "Jurisdiction not found" });
+      }
+      res.json(jurisdiction);
+    } catch (error) {
+      console.error("Error fetching jurisdiction:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/jurisdictions/:id/issues", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, category, page = 1, limit = 20 } = req.query;
+      
+      const issues = await storage.listIssues(id, {
+        status: status as string,
+        category: category as string,
+        page: parseInt(page as string),
+        limit: parseInt(limit as string)
+      });
+      res.json(issues);
+    } catch (error) {
+      console.error("Error fetching issues:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/jurisdictions/:id/announcements", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const announcements = await storage.listAnnouncements(id);
+      res.json(announcements);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/jurisdictions/:id/issues", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const issueData = {
+        ...req.body,
+        jurisdictionId: id,
+        citizenId: "citizen-1" // TODO: Get from auth
+      };
+      
+      const issue = await storage.createIssue(issueData);
+      res.status(201).json(issue);
+    } catch (error) {
+      console.error("Error creating issue:", error);
+      res.status(400).json({ error: "Invalid issue data" });
+    }
+  });
+
   // HR Dashboard Summary
   app.get("/api/hr/summary", requireAuth, requireStaff, async (req, res) => {
     try {
@@ -238,6 +359,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(approvals);
     } catch (error) {
       console.error("Error fetching pending approvals:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Employee Summary endpoint
+  app.get("/api/hr/employee/summary", requireAuth, async (req, res) => {
+    try {
+      const employeeId = req.user?.employeeId;
+      if (!employeeId) {
+        return res.status(400).json({ error: "Employee ID required" });
+      }
+      
+      const summary = await storage.getEmployeeSummary(employeeId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching employee summary:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

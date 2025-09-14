@@ -76,9 +76,9 @@ export default function EmployeeDashboard() {
     error: summaryError,
     refetch: refetchSummary
   } = useQuery({
-    queryKey: ['/api/hr/summary', refreshKey],
+    queryKey: ['/api/hr/employee/summary', refreshKey],
     queryFn: async () => {
-      const response = await fetch('/api/hr/summary');
+      const response = await fetch('/api/hr/employee/summary');
       if (!response.ok) {
         throw new Error('Failed to fetch employee summary');
       }
@@ -118,63 +118,63 @@ export default function EmployeeDashboard() {
   };
 
   const handleViewEmployeeDetails = (id: string) => {
-    console.log('View employee details:', id);
     // TODO: Navigate to employee details page
+    alert(`View employee details: ${id}`);
   };
 
   const handleEditTimesheet = (id: string) => {
-    console.log('Edit timesheet:', id);
     // TODO: Navigate to timesheet editor
+    alert(`Edit timesheet: ${id}`);
   };
 
   const handleViewTimesheetDetails = (id: string) => {
-    console.log('View timesheet details:', id);
     // TODO: Navigate to timesheet details
+    alert(`View timesheet details: ${id}`);
   };
 
   const handleViewPaystubDetails = (id: string) => {
-    console.log('View paystub details:', id);
     // TODO: Navigate to paystub details
+    alert(`View paystub details: ${id}`);
   };
 
   const handleDownloadPaystub = (id: string) => {
-    console.log('Download paystub:', id);
     // TODO: Implement paystub download
+    alert(`Download paystub: ${id}`);
   };
 
   const handleRequestLeave = () => {
-    console.log('Request leave');
     // TODO: Open leave request form
+    alert('Leave request form coming soon!');
   };
 
   const handleViewAllLeaveRequests = () => {
-    console.log('View all leave requests');
     // TODO: Navigate to leave requests page
+    alert('Leave requests page coming soon!');
   };
 
   const handleApproveTimesheet = (id: string) => {
-    console.log('Approve timesheet:', id);
     // TODO: Implement approval logic
+    alert(`Approve timesheet: ${id}`);
   };
 
   const handleDenyTimesheet = (id: string) => {
-    console.log('Deny timesheet:', id);
     // TODO: Implement denial logic
+    alert(`Deny timesheet: ${id}`);
   };
 
   const handleApproveLeaveRequest = (id: string) => {
-    console.log('Approve leave request:', id);
     // TODO: Implement approval logic
+    alert(`Approve leave request: ${id}`);
   };
 
   const handleDenyLeaveRequest = (id: string) => {
-    console.log('Deny leave request:', id);
     // TODO: Implement denial logic
+    alert(`Deny leave request: ${id}`);
   };
 
   const handleViewApprovalDetails = (type: 'timesheet' | 'leave', id: string) => {
-    console.log('View approval details:', type, id);
     // TODO: Navigate to details page
+    alert(`View ${type} details: ${id}`);
   };
 
   if (summaryError) {

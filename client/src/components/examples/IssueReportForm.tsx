@@ -12,7 +12,7 @@ export default function IssueReportFormExample() {
 
   return (
     <div className="p-4">
-      <IssueReportForm onSubmit={handleSubmit} onCancel={handleCancel} />
+      <IssueReportForm jurisdictionId="metro-central" onSubmit={handleSubmit} onCancel={handleCancel} />
     </div>
   );
 }
