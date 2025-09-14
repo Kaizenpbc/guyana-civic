@@ -12,7 +12,11 @@ import {
   type LeaveBalance,
   type InsertLeaveBalance,
   type LeaveRequest,
-  type InsertLeaveRequest
+  type InsertLeaveRequest,
+  type EmployeeDirectoryItem,
+  type DirectoryFilters,
+  type DirectoryResponse,
+  type OrgChartNode
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -65,6 +69,11 @@ export interface IStorage {
     timesheets: Timesheet[];
     leaveRequests: LeaveRequest[];
   }>;
+
+  // Employee Directory methods
+  listEmployees(filters: DirectoryFilters, requesterId: string): Promise<DirectoryResponse>;
+  getEmployeeWithUser(id: string, requesterId: string): Promise<EmployeeDirectoryItem | undefined>;
+  getOrgTree(rootEmployeeId?: string, depth?: number): Promise<OrgChartNode[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -90,32 +99,135 @@ export class MemStorage implements IStorage {
   }
   
   private initializeSampleData() {
-    // Create sample user
-    const sampleUser: User = {
-      id: "user-1",
-      username: "jdoe",
-      email: "john.doe@city.gov",
-      fullName: "John Doe",
-      role: "staff",
-      jurisdictionId: "jurisdiction-1",
-      isActive: true,
-      createdAt: new Date()
-    };
-    this.users.set(sampleUser.id, sampleUser);
+    // Create sample users
+    const users: User[] = [
+      {
+        id: "user-1",
+        username: "jdoe",
+        email: "john.doe@city.gov",
+        fullName: "John Doe",
+        phone: "+1 (555) 123-4567",
+        role: "staff",
+        jurisdictionId: "jurisdiction-1",
+        isActive: true,
+        createdAt: new Date()
+      },
+      {
+        id: "user-2",
+        username: "ssmith",
+        email: "sarah.smith@city.gov",
+        fullName: "Sarah Smith",
+        phone: "+1 (555) 234-5678",
+        role: "admin",
+        jurisdictionId: "jurisdiction-1",
+        isActive: true,
+        createdAt: new Date()
+      },
+      {
+        id: "user-3",
+        username: "mwilson",
+        email: "mike.wilson@city.gov",
+        fullName: "Mike Wilson",
+        phone: "+1 (555) 345-6789",
+        role: "staff",
+        jurisdictionId: "jurisdiction-1",
+        isActive: true,
+        createdAt: new Date()
+      },
+      {
+        id: "user-4",
+        username: "ljohnson",
+        email: "lisa.johnson@city.gov",
+        fullName: "Lisa Johnson",
+        phone: "+1 (555) 456-7890",
+        role: "staff",
+        jurisdictionId: "jurisdiction-1",
+        isActive: true,
+        createdAt: new Date()
+      },
+      {
+        id: "user-5",
+        username: "rbrown",
+        email: "robert.brown@city.gov",
+        fullName: "Robert Brown",
+        phone: "+1 (555) 567-8901",
+        role: "staff",
+        jurisdictionId: "jurisdiction-1",
+        isActive: false,
+        createdAt: new Date()
+      }
+    ];
+
+    users.forEach(user => this.users.set(user.id, user));
     
-    // Create sample employee
-    const sampleEmployee: Employee = {
-      id: "employee-1",
-      userId: "user-1",
-      employeeId: "EMP001",
-      department: "Public Works",
-      position: "Senior Engineer",
-      salary: 75000,
-      hireDate: new Date("2020-01-15"),
-      isActive: true,
-      jurisdictionId: "jurisdiction-1"
-    };
-    this.employees.set(sampleEmployee.id, sampleEmployee);
+    // Create sample employees with hierarchy
+    const employees: Employee[] = [
+      {
+        id: "employee-1",
+        userId: "user-1",
+        employeeId: "EMP001",
+        department: "Public Works",
+        position: "Senior Engineer",
+        salary: 75000,
+        hireDate: new Date("2020-01-15"),
+        managerId: "employee-2", // Reports to Sarah Smith
+        isActive: true,
+        jurisdictionId: "jurisdiction-1"
+      },
+      {
+        id: "employee-2",
+        userId: "user-2",
+        employeeId: "EMP002",
+        department: "Public Works",
+        position: "Director of Public Works",
+        salary: 95000,
+        hireDate: new Date("2018-03-10"),
+        managerId: null, // Top level
+        isActive: true,
+        jurisdictionId: "jurisdiction-1"
+      },
+      {
+        id: "employee-3",
+        userId: "user-3",
+        employeeId: "EMP003",
+        department: "Human Resources",
+        position: "HR Specialist",
+        salary: 55000,
+        hireDate: new Date("2021-06-20"),
+        managerId: "employee-4", // Reports to Lisa Johnson
+        isActive: true,
+        jurisdictionId: "jurisdiction-1"
+      },
+      {
+        id: "employee-4",
+        userId: "user-4",
+        employeeId: "EMP004",
+        department: "Human Resources",
+        position: "HR Manager",
+        salary: 72000,
+        hireDate: new Date("2019-09-15"),
+        managerId: null, // Top level
+        isActive: true,
+        jurisdictionId: "jurisdiction-1"
+      },
+      {
+        id: "employee-5",
+        userId: "user-5",
+        employeeId: "EMP005",
+        department: "Finance",
+        position: "Accountant",
+        salary: 58000,
+        hireDate: new Date("2017-11-30"),
+        managerId: null, // Was top level but now inactive
+        isActive: false,
+        jurisdictionId: "jurisdiction-1"
+      }
+    ];
+
+    employees.forEach(employee => this.employees.set(employee.id, employee));
+
+    // Use the first employee for timesheet data
+    const sampleEmployee = employees[0];
     
     // Create sample current timesheet
     const currentDate = new Date();
@@ -201,7 +313,8 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       role: insertUser.role || "citizen",
       jurisdictionId: insertUser.jurisdictionId || null,
-      isActive: insertUser.isActive ?? true
+      isActive: insertUser.isActive ?? true,
+      phone: insertUser.phone ?? null
     };
     this.users.set(id, user);
     return user;
@@ -221,8 +334,9 @@ export class MemStorage implements IStorage {
     const employee: Employee = { 
       ...insertEmployee,
       id,
-      isActive: insertEmployee.isActive ?? true,
-      salary: insertEmployee.salary ?? null
+      isActive: Boolean(insertEmployee.isActive ?? true),
+      salary: insertEmployee.salary ? Number(insertEmployee.salary) : null,
+      managerId: insertEmployee.managerId ?? null
     };
     this.employees.set(id, employee);
     return employee;
@@ -410,6 +524,193 @@ export class MemStorage implements IStorage {
       .filter(lr => lr.status === "pending");
 
     return { timesheets, leaveRequests };
+  }
+
+  // Employee Directory methods
+  async listEmployees(filters: DirectoryFilters, requesterId: string): Promise<DirectoryResponse> {
+    const requesterUser = this.users.get(requesterId);
+    const isAdmin = requesterUser?.role === "admin" || requesterUser?.role === "super_admin";
+
+    // Get all employees with user data
+    const allEmployeeItems: EmployeeDirectoryItem[] = [];
+    
+    Array.from(this.employees.values()).forEach(employee => {
+      const user = this.users.get(employee.userId);
+      if (!user) return;
+
+      const item: EmployeeDirectoryItem = {
+        id: employee.id,
+        employeeId: employee.employeeId,
+        fullName: user.fullName,
+        department: employee.department,
+        position: employee.position,
+        role: user.role,
+        isActive: employee.isActive,
+        email: user.email,
+        phone: user.phone ?? undefined,
+        hireDate: employee.hireDate.toISOString().split('T')[0],
+        salary: isAdmin ? (employee.salary ?? undefined) : undefined, // Only show salary to admins
+        managerId: employee.managerId ?? undefined,
+        jurisdictionId: employee.jurisdictionId,
+      };
+      allEmployeeItems.push(item);
+    });
+
+    // Apply filters
+    let filteredItems = allEmployeeItems;
+
+    // Status filter
+    if (filters.status === "active") {
+      filteredItems = filteredItems.filter(item => item.isActive);
+    } else if (filters.status === "inactive") {
+      filteredItems = filteredItems.filter(item => !item.isActive);
+    }
+
+    // Search query
+    if (filters.query) {
+      const query = filters.query.toLowerCase();
+      filteredItems = filteredItems.filter(item =>
+        item.fullName.toLowerCase().includes(query) ||
+        item.department.toLowerCase().includes(query) ||
+        item.position.toLowerCase().includes(query) ||
+        item.email.toLowerCase().includes(query) ||
+        item.employeeId.toLowerCase().includes(query)
+      );
+    }
+
+    // Department filter
+    if (filters.department) {
+      filteredItems = filteredItems.filter(item => item.department === filters.department);
+    }
+
+    // Role filter
+    if (filters.role) {
+      filteredItems = filteredItems.filter(item => item.role === filters.role);
+    }
+
+    // Generate facets from all filtered items
+    const departments = new Map<string, number>();
+    const roles = new Map<string, number>();
+    const statuses = new Map<string, number>();
+
+    filteredItems.forEach(item => {
+      departments.set(item.department, (departments.get(item.department) || 0) + 1);
+      roles.set(item.role, (roles.get(item.role) || 0) + 1);
+      statuses.set(item.isActive ? "active" : "inactive", (statuses.get(item.isActive ? "active" : "inactive") || 0) + 1);
+    });
+
+    const facets = {
+      departments: Array.from(departments.entries()).map(([value, count]) => ({ value, count })),
+      roles: Array.from(roles.entries()).map(([value, count]) => ({ value, count })),
+      statuses: Array.from(statuses.entries()).map(([value, count]) => ({ value, count })),
+    };
+
+    // Sort
+    filteredItems.sort((a, b) => {
+      let comparison = 0;
+      switch (filters.sortBy) {
+        case "name":
+          comparison = a.fullName.localeCompare(b.fullName);
+          break;
+        case "department":
+          comparison = a.department.localeCompare(b.department);
+          break;
+        case "position":
+          comparison = a.position.localeCompare(b.position);
+          break;
+        case "hireDate":
+          comparison = new Date(a.hireDate).getTime() - new Date(b.hireDate).getTime();
+          break;
+        default:
+          comparison = a.fullName.localeCompare(b.fullName);
+      }
+      return filters.sortOrder === "desc" ? -comparison : comparison;
+    });
+
+    // Pagination
+    const totalCount = filteredItems.length;
+    const totalPages = Math.ceil(totalCount / filters.limit);
+    const startIndex = (filters.page - 1) * filters.limit;
+    const endIndex = startIndex + filters.limit;
+    const employees = filteredItems.slice(startIndex, endIndex);
+
+    return {
+      employees,
+      totalCount,
+      page: filters.page,
+      limit: filters.limit,
+      totalPages,
+      facets,
+    };
+  }
+
+  async getEmployeeWithUser(id: string, requesterId: string): Promise<EmployeeDirectoryItem | undefined> {
+    const employee = this.employees.get(id);
+    if (!employee) return undefined;
+
+    const user = this.users.get(employee.userId);
+    if (!user) return undefined;
+
+    const requesterUser = this.users.get(requesterId);
+    const isAdmin = requesterUser?.role === "admin" || requesterUser?.role === "super_admin";
+
+    return {
+      id: employee.id,
+      employeeId: employee.employeeId,
+      fullName: user.fullName,
+      department: employee.department,
+      position: employee.position,
+      role: user.role,
+      isActive: employee.isActive,
+      email: user.email,
+      phone: user.phone ?? undefined,
+      hireDate: employee.hireDate.toISOString().split('T')[0],
+      salary: isAdmin ? (employee.salary ?? undefined) : undefined,
+      managerId: employee.managerId ?? undefined,
+      jurisdictionId: employee.jurisdictionId,
+    };
+  }
+
+  async getOrgTree(rootEmployeeId?: string, depth = 3): Promise<OrgChartNode[]> {
+    const buildNodeWithChildren = (employeeId: string, currentDepth: number): OrgChartNode | null => {
+      if (currentDepth > depth) return null;
+
+      const employee = this.employees.get(employeeId);
+      if (!employee) return null;
+
+      const user = this.users.get(employee.userId);
+      if (!user) return null;
+
+      // Find direct reports
+      const directReports = Array.from(this.employees.values())
+        .filter(emp => emp.managerId === employeeId)
+        .map(emp => buildNodeWithChildren(emp.id, currentDepth + 1))
+        .filter((node): node is OrgChartNode => node !== null);
+
+      return {
+        id: employee.id,
+        employeeId: employee.employeeId,
+        fullName: user.fullName,
+        position: employee.position,
+        department: employee.department,
+        email: user.email,
+        managerId: employee.managerId ?? undefined,
+        children: directReports,
+      };
+    };
+
+    if (rootEmployeeId) {
+      const rootNode = buildNodeWithChildren(rootEmployeeId, 0);
+      return rootNode ? [rootNode] : [];
+    }
+
+    // Find top-level employees (those without managers)
+    const topLevelEmployees = Array.from(this.employees.values())
+      .filter(emp => !emp.managerId)
+      .map(emp => buildNodeWithChildren(emp.id, 0))
+      .filter((node): node is OrgChartNode => node !== null);
+
+    return topLevelEmployees;
   }
 }
 

@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import HomePage from "@/pages/HomePage";
 import JurisdictionPortal from "@/pages/JurisdictionPortal";
 import EmployeeDashboard from "@/pages/EmployeeDashboard";
+import EmployeeDirectory from "@/pages/EmployeeDirectory";
 import NotFound from "@/pages/NotFound";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/jurisdiction/:id" component={JurisdictionPortal} />
       <Route path="/staff/dashboard" component={EmployeeDashboard} />
+      <Route path="/staff/directory" component={EmployeeDirectory} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull(),
   fullName: text("full_name").notNull(),
+  phone: text("phone"),
   role: userRoleEnum("role").default("citizen").notNull(),
   jurisdictionId: varchar("jurisdiction_id").references(() => jurisdictions.id),
   isActive: boolean("is_active").default(true).notNull(),
@@ -69,6 +70,7 @@ export const employees = pgTable("employees", {
   position: text("position").notNull(),
   salary: integer("salary"),
   hireDate: timestamp("hire_date").notNull(),
+  managerId: varchar("manager_id").references((): any => employees.id),
   isActive: boolean("is_active").default(true).notNull(),
   jurisdictionId: varchar("jurisdiction_id").references(() => jurisdictions.id).notNull(),
 });
@@ -198,6 +200,64 @@ export const insertLeaveRequestSchema = createInsertSchema(leaveRequests).omit({
   createdAt: true,
   updatedAt: true,
 });
+
+// Employee Directory Schemas
+export const directoryFiltersSchema = z.object({
+  query: z.string().optional(),
+  department: z.string().optional(),
+  role: z.enum(["citizen", "staff", "admin", "super_admin"]).optional(),
+  status: z.enum(["active", "inactive", "all"]).default("active"),
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(20),
+  sortBy: z.enum(["name", "department", "position", "hireDate"]).default("name"),
+  sortOrder: z.enum(["asc", "desc"]).default("asc"),
+});
+
+export type DirectoryFilters = z.infer<typeof directoryFiltersSchema>;
+
+// Employee Directory Item (flattened join of employee + user data)
+export type EmployeeDirectoryItem = {
+  id: string;
+  employeeId: string;
+  fullName: string;
+  department: string;
+  position: string;
+  role: "citizen" | "staff" | "admin" | "super_admin";
+  isActive: boolean;
+  email: string;
+  phone?: string;
+  hireDate: string;
+  salary?: number; // Only visible to admins
+  managerId?: string;
+  jurisdictionId: string;
+};
+
+// Organizational Chart Types
+export type OrgChartNode = {
+  id: string;
+  employeeId: string;
+  fullName: string;
+  position: string;
+  department: string;
+  email: string;
+  managerId?: string;
+  children: OrgChartNode[];
+};
+
+export type DirectoryFacets = {
+  departments: { value: string; count: number }[];
+  roles: { value: string; count: number }[];
+  statuses: { value: string; count: number }[];
+};
+
+export type DirectoryResponse = {
+  employees: EmployeeDirectoryItem[];
+  totalCount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  facets: DirectoryFacets;
+};
 
 // Types
 export type InsertJurisdiction = z.infer<typeof insertJurisdictionSchema>;

@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { 
   insertTimesheetSchema, 
   insertTimesheetEntrySchema,
-  insertLeaveRequestSchema 
+  insertLeaveRequestSchema,
+  directoryFiltersSchema
 } from "@shared/schema";
 
 // Basic auth middleware - stub for now
@@ -237,6 +238,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(approvals);
     } catch (error) {
       console.error("Error fetching pending approvals:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Employee Directory routes
+  app.get("/api/hr/employees", requireAuth, requireStaff, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Parse and validate query parameters using zod schema
+      const filters = directoryFiltersSchema.parse({
+        query: req.query.query || undefined,
+        department: req.query.department || undefined,
+        role: req.query.role || undefined,
+        status: req.query.status || "active",
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20,
+        sortBy: req.query.sortBy || "name",
+        sortOrder: req.query.sortOrder || "asc",
+      });
+
+      const response = await storage.listEmployees(filters, req.user.id);
+      res.json(response);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/hr/employees/:id", requireAuth, requireStaff, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { id } = req.params;
+      const employee = await storage.getEmployeeWithUser(id, req.user.id);
+      
+      if (!employee) {
+        return res.status(404).json({ error: "Employee not found" });
+      }
+
+      res.json(employee);
+    } catch (error) {
+      console.error("Error fetching employee details:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/hr/org/tree", requireAuth, requireStaff, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const rootEmployeeId = req.query.rootEmployeeId as string || undefined;
+      const depth = parseInt(req.query.depth as string) || 3;
+
+      const orgTree = await storage.getOrgTree(rootEmployeeId, depth);
+      res.json(orgTree);
+    } catch (error) {
+      console.error("Error fetching organizational tree:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
