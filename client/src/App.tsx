@@ -7,9 +7,12 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import HomePage from "@/pages/HomePage";
 import JurisdictionPortal from "@/pages/JurisdictionPortal";
+import RDCPortal from "@/pages/RDCPortal";
+import Region2Portal from "@/pages/Region2Portal";
 import EmployeeDashboard from "@/pages/EmployeeDashboard";
 import EmployeeDirectory from "@/pages/EmployeeDirectory";
 import LoginPage from "@/pages/LoginPage";
+import MinisterialDashboard from "@/pages/MinisterialDashboard";
 import NotFound from "@/pages/NotFound";
 
 function Router() {
@@ -17,9 +20,12 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/rdc/region-2" component={Region2Portal} />
+      <Route path="/rdc/:id" component={RDCPortal} />
       <Route path="/jurisdiction/:id" component={JurisdictionPortal} />
       <Route path="/staff/dashboard" component={EmployeeDashboard} />
       <Route path="/staff/directory" component={EmployeeDirectory} />
+      <Route path="/ministerial/dashboard" component={MinisterialDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

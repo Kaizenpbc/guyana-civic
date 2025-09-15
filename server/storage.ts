@@ -159,33 +159,96 @@ export class MemStorage implements IStorage {
   }
   
   private initializeSampleData() {
-    // Create sample jurisdictions
+    // Create Guyanese RDCs (Regional Democratic Councils)
     const jurisdictions: Jurisdiction[] = [
       {
-        id: "metro-central",
-        name: "Metro Central District",
-        description: "Central business district managing commercial zones, transportation infrastructure, and downtown public services.",
-        contactEmail: "info@metrocentral.gov",
-        contactPhone: "+1 (555) 123-4567",
-        address: "100 City Hall Plaza, Metro Central",
+        id: "region-1",
+        name: "Barima-Waini (Region 1)",
+        description: "Northernmost region managing Mabaruma and surrounding areas, focusing on agriculture, mining, and border services.",
+        contactEmail: "info@region1.gov.gy",
+        contactPhone: "+592 777-1234",
+        address: "Regional Democratic Council, Mabaruma, Region 1",
         createdAt: new Date()
       },
       {
-        id: "riverside-municipal",
-        name: "Riverside Municipal Council",
-        description: "Residential area council responsible for parks, community centers, and local road maintenance.",
-        contactEmail: "contact@riverside.municipal.gov",
-        contactPhone: "+1 (555) 987-6543",
-        address: "45 Riverside Community Center, Riverside",
+        id: "region-2",
+        name: "Pomeroon-Supenaam (Region 2)",
+        description: "Coastal region managing Anna Regina and surrounding areas, specializing in rice farming and coastal development.",
+        contactEmail: "info@region2.gov.gy",
+        contactPhone: "+592 777-1235",
+        address: "Regional Democratic Council, Anna Regina, Region 2",
         createdAt: new Date()
       },
       {
-        id: "northside-township",
-        name: "Northside Township",
-        description: "Industrial and residential mixed-use area managing utilities, waste services, and community development.",
-        contactEmail: "admin@northside.township.gov",
-        contactPhone: "+1 (555) 456-7890",
-        address: "200 Industrial Blvd, Northside",
+        id: "region-3",
+        name: "Essequibo Islands-West Demerara (Region 3)",
+        description: "Strategic region managing Vreed-en-Hoop and Essequibo Islands, focusing on transportation and industrial development.",
+        contactEmail: "info@region3.gov.gy",
+        contactPhone: "+592 777-1236",
+        address: "Regional Democratic Council, Vreed-en-Hoop, Region 3",
+        createdAt: new Date()
+      },
+      {
+        id: "region-4",
+        name: "Demerara-Mahaica (Region 4)",
+        description: "Capital region managing Georgetown and surrounding areas, providing central government services and urban development.",
+        contactEmail: "info@region4.gov.gy",
+        contactPhone: "+592 777-1237",
+        address: "Regional Democratic Council, Georgetown, Region 4",
+        createdAt: new Date()
+      },
+      {
+        id: "region-5",
+        name: "Mahaica-Berbice (Region 5)",
+        description: "Agricultural region managing Fort Wellington and surrounding areas, specializing in sugar production and rural development.",
+        contactEmail: "info@region5.gov.gy",
+        contactPhone: "+592 777-1238",
+        address: "Regional Democratic Council, Fort Wellington, Region 5",
+        createdAt: new Date()
+      },
+      {
+        id: "region-6",
+        name: "East Berbice-Corentyne (Region 6)",
+        description: "Eastern region managing New Amsterdam and surrounding areas, focusing on agriculture, education, and border services.",
+        contactEmail: "info@region6.gov.gy",
+        contactPhone: "+592 777-1239",
+        address: "Regional Democratic Council, New Amsterdam, Region 6",
+        createdAt: new Date()
+      },
+      {
+        id: "region-7",
+        name: "Cuyuni-Mazaruni (Region 7)",
+        description: "Mining region managing Bartica and surrounding areas, specializing in gold mining, forestry, and eco-tourism.",
+        contactEmail: "info@region7.gov.gy",
+        contactPhone: "+592 777-1240",
+        address: "Regional Democratic Council, Bartica, Region 7",
+        createdAt: new Date()
+      },
+      {
+        id: "region-8",
+        name: "Potaro-Siparuni (Region 8)",
+        description: "Interior region managing Mahdia and surrounding areas, focusing on mining, forestry, and indigenous community development.",
+        contactEmail: "info@region8.gov.gy",
+        contactPhone: "+592 777-1241",
+        address: "Regional Democratic Council, Mahdia, Region 8",
+        createdAt: new Date()
+      },
+      {
+        id: "region-9",
+        name: "Upper Takutu-Upper Essequibo (Region 9)",
+        description: "Southern region managing Lethem and surrounding areas, specializing in ranching, agriculture, and border trade.",
+        contactEmail: "info@region9.gov.gy",
+        contactPhone: "+592 777-1242",
+        address: "Regional Democratic Council, Lethem, Region 9",
+        createdAt: new Date()
+      },
+      {
+        id: "region-10",
+        name: "Upper Demerara-Berbice (Region 10)",
+        description: "Industrial region managing Linden and surrounding areas, focusing on bauxite mining, manufacturing, and urban development.",
+        contactEmail: "info@region10.gov.gy",
+        contactPhone: "+592 777-1243",
+        address: "Regional Democratic Council, Linden, Region 10",
         createdAt: new Date()
       }
     ];
@@ -1174,7 +1237,12 @@ export class MemStorage implements IStorage {
   // Jurisdiction methods
   async listJurisdictions(): Promise<Jurisdiction[]> {
     return Array.from(this.jurisdictions.values())
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => {
+        // Extract region number from ID (e.g., "region-1" -> 1)
+        const aRegion = parseInt(a.id.split('-')[1]);
+        const bRegion = parseInt(b.id.split('-')[1]);
+        return aRegion - bRegion;
+      });
   }
 
   async getJurisdiction(id: string): Promise<Jurisdiction | undefined> {

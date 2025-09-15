@@ -443,6 +443,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ministerial Dashboard endpoint
+  app.get("/api/ministerial/dashboard", requireAuth, async (req, res) => {
+    try {
+      // Check if user has ministerial access (super_admin role)
+      if (req.user.role !== "super_admin") {
+        return res.status(403).json({ error: "Ministerial access required" });
+      }
+
+      // Get all jurisdictions (RDCs)
+      const jurisdictions = await storage.listJurisdictions();
+      
+      // Get summary statistics for each RDC
+      const rdcStats = await Promise.all(
+        jurisdictions.map(async (rdc) => {
+          const issues = await storage.listIssues(rdc.id);
+          const announcements = await storage.listAnnouncements(rdc.id);
+          
+          // Count issues by status
+          const issueStats = {
+            total: issues.length,
+            submitted: issues.filter(i => i.status === "submitted").length,
+            inProgress: issues.filter(i => i.status === "in_progress").length,
+            resolved: issues.filter(i => i.status === "resolved").length,
+            urgent: issues.filter(i => i.priority === "urgent").length,
+          };
+
+          return {
+            id: rdc.id,
+            name: rdc.name,
+            description: rdc.description,
+            contactEmail: rdc.contactEmail,
+            contactPhone: rdc.contactPhone,
+            address: rdc.address,
+            issueStats,
+            announcementCount: announcements.length,
+            lastUpdated: new Date().toISOString()
+          };
+        })
+      );
+
+      // Calculate overall statistics
+      const overallStats = {
+        totalRDCs: rdcStats.length,
+        totalIssues: rdcStats.reduce((sum, rdc) => sum + rdc.issueStats.total, 0),
+        urgentIssues: rdcStats.reduce((sum, rdc) => sum + rdc.issueStats.urgent, 0),
+        resolvedIssues: rdcStats.reduce((sum, rdc) => sum + rdc.issueStats.resolved, 0),
+        totalAnnouncements: rdcStats.reduce((sum, rdc) => sum + rdc.announcementCount, 0),
+        averageResolutionRate: rdcStats.length > 0 
+          ? (rdcStats.reduce((sum, rdc) => sum + rdc.issueStats.resolved, 0) / 
+             rdcStats.reduce((sum, rdc) => sum + rdc.issueStats.total, 0) * 100).toFixed(1)
+          : "0.0"
+      };
+
+      res.json({
+        overallStats,
+        rdcStats,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error fetching ministerial dashboard data:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
