@@ -1,0 +1,630 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle, CheckCircle, FileText, Target, X } from 'lucide-react';
+import { 
+  ProjectRisk, 
+  ProjectIssue, 
+  ProjectDecision, 
+  ProjectAction,
+  createRisk,
+  createIssue,
+  createDecision,
+  createAction,
+  getRiskScoreColor,
+  getRiskScoreLabel,
+  getStatusColor,
+  getPriorityColor
+} from '@/api/risk-management-api';
+
+interface RiskManagementFormsProps {
+  projectId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({ 
+  projectId, 
+  onClose, 
+  onSuccess 
+}) => {
+  const [activeTab, setActiveTab] = useState<'risk' | 'issue' | 'decision' | 'action'>('risk');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Risk form state
+  const [riskForm, setRiskForm] = useState({
+    title: '',
+    description: '',
+    category: 'technical' as const,
+    probability: 'medium' as const,
+    impact: 'medium' as const,
+    mitigation_strategy: '',
+    contingency_plan: '',
+    due_date: ''
+  });
+
+  // Issue form state
+  const [issueForm, setIssueForm] = useState({
+    title: '',
+    description: '',
+    category: 'technical' as const,
+    severity: 'medium' as const,
+    priority: 'medium' as const,
+    impact_description: '',
+    root_cause: '',
+    resolution_plan: '',
+    due_date: ''
+  });
+
+  // Decision form state
+  const [decisionForm, setDecisionForm] = useState({
+    title: '',
+    description: '',
+    decision_type: 'technical' as const,
+    decision_criteria: '',
+    options_considered: '',
+    chosen_option: '',
+    rationale: '',
+    implementation_deadline: ''
+  });
+
+  // Action form state
+  const [actionForm, setActionForm] = useState({
+    title: '',
+    description: '',
+    action_type: 'mitigation' as const,
+    priority: 'medium' as const,
+    due_date: ''
+  });
+
+  const handleRiskSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      await createRisk(projectId, riskForm);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Error creating risk:', error);
+      alert('Failed to create risk. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleIssueSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      await createIssue(projectId, issueForm);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Error creating issue:', error);
+      alert('Failed to create issue. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDecisionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      await createDecision(projectId, decisionForm);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Error creating decision:', error);
+      alert('Failed to create decision. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleActionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      await createAction(projectId, actionForm);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Error creating action:', error);
+      alert('Failed to create action. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const tabs = [
+    { id: 'risk', label: 'Raise Risk', icon: AlertTriangle, color: 'text-red-600' },
+    { id: 'issue', label: 'Record Issue', icon: AlertTriangle, color: 'text-orange-600' },
+    { id: 'decision', label: 'Record Decision', icon: CheckCircle, color: 'text-blue-600' },
+    { id: 'action', label: 'Record Action', icon: Target, color: 'text-green-600' }
+  ] as const;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-xl font-semibold">Risk Management</CardTitle>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        
+        <CardContent>
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 ${activeTab === tab.id ? tab.color : ''}`} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Risk Form */}
+          {activeTab === 'risk' && (
+            <form onSubmit={handleRiskSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="risk-title">Risk Title *</Label>
+                  <Input
+                    id="risk-title"
+                    value={riskForm.title}
+                    onChange={(e) => setRiskForm({ ...riskForm, title: e.target.value })}
+                    placeholder="Enter risk title"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="risk-category">Category *</Label>
+                  <Select value={riskForm.category} onValueChange={(value: any) => setRiskForm({ ...riskForm, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="technical">Technical</SelectItem>
+                      <SelectItem value="financial">Financial</SelectItem>
+                      <SelectItem value="regulatory">Regulatory</SelectItem>
+                      <SelectItem value="stakeholder">Stakeholder</SelectItem>
+                      <SelectItem value="environmental">Environmental</SelectItem>
+                      <SelectItem value="operational">Operational</SelectItem>
+                      <SelectItem value="schedule">Schedule</SelectItem>
+                      <SelectItem value="quality">Quality</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="risk-description">Description</Label>
+                <Textarea
+                  id="risk-description"
+                  value={riskForm.description}
+                  onChange={(e) => setRiskForm({ ...riskForm, description: e.target.value })}
+                  placeholder="Describe the risk in detail"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="risk-probability">Probability *</Label>
+                  <Select value={riskForm.probability} onValueChange={(value: any) => setRiskForm({ ...riskForm, probability: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="risk-impact">Impact *</Label>
+                  <Select value={riskForm.impact} onValueChange={(value: any) => setRiskForm({ ...riskForm, impact: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="risk-mitigation">Mitigation Strategy</Label>
+                <Textarea
+                  id="risk-mitigation"
+                  value={riskForm.mitigation_strategy}
+                  onChange={(e) => setRiskForm({ ...riskForm, mitigation_strategy: e.target.value })}
+                  placeholder="Describe how to mitigate this risk"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="risk-contingency">Contingency Plan</Label>
+                <Textarea
+                  id="risk-contingency"
+                  value={riskForm.contingency_plan}
+                  onChange={(e) => setRiskForm({ ...riskForm, contingency_plan: e.target.value })}
+                  placeholder="Describe the contingency plan if risk occurs"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="risk-due-date">Due Date</Label>
+                <Input
+                  id="risk-due-date"
+                  type="date"
+                  value={riskForm.due_date}
+                  onChange={(e) => setRiskForm({ ...riskForm, due_date: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Risk'}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Issue Form */}
+          {activeTab === 'issue' && (
+            <form onSubmit={handleIssueSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="issue-title">Issue Title *</Label>
+                  <Input
+                    id="issue-title"
+                    value={issueForm.title}
+                    onChange={(e) => setIssueForm({ ...issueForm, title: e.target.value })}
+                    placeholder="Enter issue title"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="issue-category">Category *</Label>
+                  <Select value={issueForm.category} onValueChange={(value: any) => setIssueForm({ ...issueForm, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="technical">Technical</SelectItem>
+                      <SelectItem value="financial">Financial</SelectItem>
+                      <SelectItem value="regulatory">Regulatory</SelectItem>
+                      <SelectItem value="stakeholder">Stakeholder</SelectItem>
+                      <SelectItem value="environmental">Environmental</SelectItem>
+                      <SelectItem value="operational">Operational</SelectItem>
+                      <SelectItem value="schedule">Schedule</SelectItem>
+                      <SelectItem value="quality">Quality</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="issue-description">Description</Label>
+                <Textarea
+                  id="issue-description"
+                  value={issueForm.description}
+                  onChange={(e) => setIssueForm({ ...issueForm, description: e.target.value })}
+                  placeholder="Describe the issue in detail"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="issue-severity">Severity *</Label>
+                  <Select value={issueForm.severity} onValueChange={(value: any) => setIssueForm({ ...issueForm, severity: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="issue-priority">Priority *</Label>
+                  <Select value={issueForm.priority} onValueChange={(value: any) => setIssueForm({ ...issueForm, priority: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="issue-impact">Impact Description</Label>
+                <Textarea
+                  id="issue-impact"
+                  value={issueForm.impact_description}
+                  onChange={(e) => setIssueForm({ ...issueForm, impact_description: e.target.value })}
+                  placeholder="Describe the impact of this issue"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="issue-root-cause">Root Cause</Label>
+                <Textarea
+                  id="issue-root-cause"
+                  value={issueForm.root_cause}
+                  onChange={(e) => setIssueForm({ ...issueForm, root_cause: e.target.value })}
+                  placeholder="Identify the root cause of the issue"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="issue-resolution">Resolution Plan</Label>
+                <Textarea
+                  id="issue-resolution"
+                  value={issueForm.resolution_plan}
+                  onChange={(e) => setIssueForm({ ...issueForm, resolution_plan: e.target.value })}
+                  placeholder="Describe the plan to resolve this issue"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="issue-due-date">Due Date</Label>
+                <Input
+                  id="issue-due-date"
+                  type="date"
+                  value={issueForm.due_date}
+                  onChange={(e) => setIssueForm({ ...issueForm, due_date: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Issue'}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Decision Form */}
+          {activeTab === 'decision' && (
+            <form onSubmit={handleDecisionSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="decision-title">Decision Title *</Label>
+                  <Input
+                    id="decision-title"
+                    value={decisionForm.title}
+                    onChange={(e) => setDecisionForm({ ...decisionForm, title: e.target.value })}
+                    placeholder="Enter decision title"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="decision-type">Decision Type *</Label>
+                  <Select value={decisionForm.decision_type} onValueChange={(value: any) => setDecisionForm({ ...decisionForm, decision_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="technical">Technical</SelectItem>
+                      <SelectItem value="business">Business</SelectItem>
+                      <SelectItem value="resource">Resource</SelectItem>
+                      <SelectItem value="schedule">Schedule</SelectItem>
+                      <SelectItem value="scope">Scope</SelectItem>
+                      <SelectItem value="quality">Quality</SelectItem>
+                      <SelectItem value="risk">Risk</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="decision-description">Description</Label>
+                <Textarea
+                  id="decision-description"
+                  value={decisionForm.description}
+                  onChange={(e) => setDecisionForm({ ...decisionForm, description: e.target.value })}
+                  placeholder="Describe the decision context"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="decision-criteria">Decision Criteria</Label>
+                <Textarea
+                  id="decision-criteria"
+                  value={decisionForm.decision_criteria}
+                  onChange={(e) => setDecisionForm({ ...decisionForm, decision_criteria: e.target.value })}
+                  placeholder="List the criteria used to make this decision"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="decision-options">Options Considered</Label>
+                <Textarea
+                  id="decision-options"
+                  value={decisionForm.options_considered}
+                  onChange={(e) => setDecisionForm({ ...decisionForm, options_considered: e.target.value })}
+                  placeholder="List all options that were considered"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="decision-chosen">Chosen Option</Label>
+                <Textarea
+                  id="decision-chosen"
+                  value={decisionForm.chosen_option}
+                  onChange={(e) => setDecisionForm({ ...decisionForm, chosen_option: e.target.value })}
+                  placeholder="Describe the chosen option"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="decision-rationale">Rationale</Label>
+                <Textarea
+                  id="decision-rationale"
+                  value={decisionForm.rationale}
+                  onChange={(e) => setDecisionForm({ ...decisionForm, rationale: e.target.value })}
+                  placeholder="Explain why this option was chosen"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="decision-deadline">Implementation Deadline</Label>
+                <Input
+                  id="decision-deadline"
+                  type="date"
+                  value={decisionForm.implementation_deadline}
+                  onChange={(e) => setDecisionForm({ ...decisionForm, implementation_deadline: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Decision'}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Action Form */}
+          {activeTab === 'action' && (
+            <form onSubmit={handleActionSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="action-title">Action Title *</Label>
+                  <Input
+                    id="action-title"
+                    value={actionForm.title}
+                    onChange={(e) => setActionForm({ ...actionForm, title: e.target.value })}
+                    placeholder="Enter action title"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="action-type">Action Type *</Label>
+                  <Select value={actionForm.action_type} onValueChange={(value: any) => setActionForm({ ...actionForm, action_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mitigation">Mitigation</SelectItem>
+                      <SelectItem value="resolution">Resolution</SelectItem>
+                      <SelectItem value="implementation">Implementation</SelectItem>
+                      <SelectItem value="monitoring">Monitoring</SelectItem>
+                      <SelectItem value="communication">Communication</SelectItem>
+                      <SelectItem value="escalation">Escalation</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="action-description">Description</Label>
+                <Textarea
+                  id="action-description"
+                  value={actionForm.description}
+                  onChange={(e) => setActionForm({ ...actionForm, description: e.target.value })}
+                  placeholder="Describe the action in detail"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="action-priority">Priority *</Label>
+                <Select value={actionForm.priority} onValueChange={(value: any) => setActionForm({ ...actionForm, priority: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="action-due-date">Due Date</Label>
+                <Input
+                  id="action-due-date"
+                  type="date"
+                  value={actionForm.due_date}
+                  onChange={(e) => setActionForm({ ...actionForm, due_date: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Action'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default RiskManagementForms;

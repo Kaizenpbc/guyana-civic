@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Briefcase, MapPin, LayoutDashboard, Users, CalendarCheck, DollarSign, ClipboardList, TrendingUp, AlertCircle, CheckCircle, Calendar, FileText, ChevronRight, ChevronDown, Plus, Minus, CheckSquare, Square, Lightbulb, AlertTriangle, Save, Loader2 } from 'lucide-react';
+import { User, Mail, Briefcase, MapPin, LayoutDashboard, Users, CalendarCheck, DollarSign, ClipboardList, TrendingUp, AlertCircle, CheckCircle, Calendar, FileText, ChevronRight, ChevronDown, Plus, Minus, CheckSquare, Square, Lightbulb, AlertTriangle, Save, Loader2, Target } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import LogoutButton from '@/components/LogoutButton';
 import ProjectTable from '@/components/ProjectTable';
@@ -27,6 +27,17 @@ import {
   type ScheduleTemplate,
   type PMChecklistTemplate
 } from '@/api/pm-tool-api';
+import { 
+  getProjectRisks,
+  getProjectIssues,
+  getProjectDecisions,
+  getProjectActions,
+  type ProjectRisk,
+  type ProjectIssue,
+  type ProjectDecision,
+  type ProjectAction
+} from '@/api/risk-management-api';
+import RiskManagementForms from '@/components/RiskManagementForms';
 
 // API function to get current user
 const getCurrentUser = async (): Promise<{ user: any }> => {
@@ -66,6 +77,10 @@ const PMDashboard: React.FC = () => {
   const [scheduleTasks, setScheduleTasks] = useState<ScheduleTask[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Risk Management state
+  const [showRiskManagement, setShowRiskManagement] = useState(false);
+  const [selectedProjectForRisk, setSelectedProjectForRisk] = useState<any>(null);
   
   const { data: authData, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
@@ -200,6 +215,22 @@ const PMDashboard: React.FC = () => {
     }
     // The useQuery for getCurrentSchedule will automatically load the schedule
     // and the useQuery for getScheduleTasks will load the tasks
+  };
+
+  const handleRiskManagementClick = (project: any) => {
+    console.log('Risk Management clicked for project:', project);
+    setSelectedProjectForRisk(project);
+    setShowRiskManagement(true);
+  };
+
+  const handleRiskManagementClose = () => {
+    setShowRiskManagement(false);
+    setSelectedProjectForRisk(null);
+  };
+
+  const handleRiskManagementSuccess = () => {
+    // Refresh data after successful creation
+    queryClient.invalidateQueries({ queryKey: ['projects', 'pm', user.id] });
   };
 
 
@@ -1810,160 +1841,222 @@ const PMDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+      <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Dashboard</h1>
-          <LogoutButton />
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <LayoutDashboard className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">Project Manager Dashboard</h1>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
+              <p className="text-xs text-gray-500">{user.role.toUpperCase()}</p>
+            </div>
+            <LogoutButton />
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* User Info Card */}
-          <Card className="mb-6">
+          {/* Projects Table */}
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" /> Welcome, {user.fullName}!
+              <CardTitle className="flex items-center space-x-2">
+                <Briefcase className="h-5 w-5" />
+                <span>My Projects</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" /> {user.email}
-              </p>
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Briefcase className="h-4 w-4" /> Role: Project Manager
-              </p>
-              {user.jurisdictionId && (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" /> Jurisdiction: {user.jurisdictionId}
-                </p>
-              )}
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Start</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Finish</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projected Finish</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Projected Budget</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spend to Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% Complete</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link to Risks</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link to Issues</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {projectsLoading ? (
+                      <tr>
+                        <td colSpan={11} className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center space-x-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Loading projects...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : projectsError ? (
+                      <tr>
+                        <td colSpan={11} className="px-6 py-4 text-center text-red-500">
+                          <div className="flex items-center justify-center space-x-2">
+                            <AlertCircle className="h-4 w-4" />
+                            <span>Failed to load projects</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : projectsData?.projects && projectsData.projects.length > 0 ? (
+                      projectsData.projects.map((project: any) => (
+                        <tr 
+                          key={project.id} 
+                          className="hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => handleProjectClick(project)}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{project.name}</div>
+                            <div className="text-sm text-gray-500">ID: {project.id}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900 max-w-xs truncate">{project.description}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {project.plannedStartDate ? new Date(project.plannedStartDate).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {project.plannedEndDate ? new Date(project.plannedEndDate).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {project.projectedEndDate ? new Date(project.projectedEndDate).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${project.budget?.toLocaleString() || '0'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${project.spentToDate?.toLocaleString() || '0'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full" 
+                                  style={{ width: `${project.progressPercentage || 0}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm text-gray-900">{project.progressPercentage || 0}%</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge 
+                              variant={
+                                project.status === 'completed' ? 'default' :
+                                project.status === 'in_progress' ? 'default' :
+                                project.status === 'initiate' ? 'secondary' :
+                                project.status === 'planning' ? 'secondary' :
+                                'outline'
+                              }
+                              className={
+                                project.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                project.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                                project.status === 'initiate' ? 'bg-yellow-100 text-yellow-800' :
+                                project.status === 'planning' ? 'bg-purple-100 text-purple-800' :
+                                'bg-gray-100 text-gray-800'
+                              }
+                            >
+                              {project.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                              View Risks
+                            </Button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                              View Issues
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={11} className="px-6 py-4 text-center text-muted-foreground">
+                          <div className="flex flex-col items-center space-y-2">
+                            <ClipboardList className="h-8 w-8" />
+                            <p>No projects assigned to you yet</p>
+                            <p className="text-sm">Contact your administrator to get projects assigned</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Active Projects Card */}
-          <div className="mb-6">
-            {projectsLoading ? (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="p-3 border rounded-lg bg-card animate-pulse">
-                        <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                        <div className="h-2 bg-muted rounded w-1/2"></div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : projectsError ? (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center text-red-500 py-4">
-                    <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                    <p>Failed to load projects</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : projectsData?.projects && projectsData.projects.length > 0 ? (
-              <ActiveProjectsCard 
-                projects={projectsData.projects} 
-                onProjectClick={handleProjectClick}
-              />
-            ) : (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center text-muted-foreground py-4">
-                    <ClipboardList className="h-8 w-8 mx-auto mb-2" />
-                    <p>No projects assigned to you yet</p>
-                    <p className="text-sm">Contact your administrator to get projects assigned</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-
-          {/* Quick Actions */}
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Project Management Tools</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">My Projects</CardTitle>
-                <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">Active Projects</p>
-                <p className="text-xs text-muted-foreground">View and manage your assigned projects</p>
-                <Button onClick={() => setLocation('/pm/projects')} className="mt-4 w-full">Manage Projects</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Project Planning</CardTitle>
-                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">Create Plans</p>
-                <p className="text-xs text-muted-foreground">Set up project milestones and timelines</p>
-                <Button onClick={() => setLocation('/pm/planning')} className="mt-4 w-full">Plan Projects</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Progress Tracking</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">Update Status</p>
-                <p className="text-xs text-muted-foreground">Track progress and report updates</p>
-                <Button onClick={() => setLocation('/pm/progress')} className="mt-4 w-full">Track Progress</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Budget Management</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">Budget Tracking</p>
-                <p className="text-xs text-muted-foreground">Monitor project budgets and expenses</p>
-                <Button onClick={() => setLocation('/pm/budget')} className="mt-4 w-full">View Budgets</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Team Management</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">Project Teams</p>
-                <p className="text-xs text-muted-foreground">Manage project team members</p>
-                <Button onClick={() => setLocation('/pm/teams')} className="mt-4 w-full">Manage Teams</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Reports</CardTitle>
-                <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">Project Reports</p>
-                <p className="text-xs text-muted-foreground">Generate project status reports</p>
-                <Button onClick={() => setLocation('/pm/reports')} className="mt-4 w-full">View Reports</Button>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Risk Management Section */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <span>Risk Management</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Button 
+                  onClick={() => handleRiskManagementClick(projectsData?.projects?.[0])}
+                  className="h-20 flex flex-col items-center justify-center space-y-2 bg-red-50 hover:bg-red-100 border-red-200"
+                  variant="outline"
+                >
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                  <span className="text-sm font-medium text-red-700">Raise Risk</span>
+                </Button>
+                
+                <Button 
+                  onClick={() => handleRiskManagementClick(projectsData?.projects?.[0])}
+                  className="h-20 flex flex-col items-center justify-center space-y-2 bg-orange-50 hover:bg-orange-100 border-orange-200"
+                  variant="outline"
+                >
+                  <AlertTriangle className="h-6 w-6 text-orange-600" />
+                  <span className="text-sm font-medium text-orange-700">Record Issue</span>
+                </Button>
+                
+                <Button 
+                  onClick={() => handleRiskManagementClick(projectsData?.projects?.[0])}
+                  className="h-20 flex flex-col items-center justify-center space-y-2 bg-blue-50 hover:bg-blue-100 border-blue-200"
+                  variant="outline"
+                >
+                  <CheckCircle className="h-6 w-6 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-700">Record Decision</span>
+                </Button>
+                
+                <Button 
+                  onClick={() => handleRiskManagementClick(projectsData?.projects?.[0])}
+                  className="h-20 flex flex-col items-center justify-center space-y-2 bg-green-50 hover:bg-green-100 border-green-200"
+                  variant="outline"
+                >
+                  <Target className="h-6 w-6 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">Record Action</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
+
+      {/* Risk Management Forms Modal */}
+      {showRiskManagement && selectedProjectForRisk && (
+        <RiskManagementForms
+          projectId={selectedProjectForRisk.id}
+          onClose={handleRiskManagementClose}
+          onSuccess={handleRiskManagementSuccess}
+        />
+      )}
     </div>
   );
 };

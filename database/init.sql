@@ -725,3 +725,177 @@ INSERT INTO pm_checklist_templates (id, task_type, task_keywords, checklist_item
   {"id": "5", "text": "Schedule design review meeting", "priority": "important"}
 ]'
 );
+
+-- =============================================
+-- RISK/ISSUE/DECISION/ACTION MODULE (Phase 1)
+-- =============================================
+
+-- Project Risks Table
+CREATE TABLE project_risks (
+    id VARCHAR(36) PRIMARY KEY,
+    project_id VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    category ENUM('technical', 'financial', 'regulatory', 'stakeholder', 'environmental', 'operational', 'schedule', 'quality') NOT NULL,
+    probability ENUM('low', 'medium', 'high', 'critical') NOT NULL DEFAULT 'medium',
+    impact ENUM('low', 'medium', 'high', 'critical') NOT NULL DEFAULT 'medium',
+    risk_score INT GENERATED ALWAYS AS (
+        CASE 
+            WHEN probability = 'low' AND impact = 'low' THEN 1
+            WHEN probability = 'low' AND impact = 'medium' THEN 2
+            WHEN probability = 'low' AND impact = 'high' THEN 3
+            WHEN probability = 'low' AND impact = 'critical' THEN 4
+            WHEN probability = 'medium' AND impact = 'low' THEN 2
+            WHEN probability = 'medium' AND impact = 'medium' THEN 4
+            WHEN probability = 'medium' AND impact = 'high' THEN 6
+            WHEN probability = 'medium' AND impact = 'critical' THEN 8
+            WHEN probability = 'high' AND impact = 'low' THEN 3
+            WHEN probability = 'high' AND impact = 'medium' THEN 6
+            WHEN probability = 'high' AND impact = 'high' THEN 9
+            WHEN probability = 'high' AND impact = 'critical' THEN 12
+            WHEN probability = 'critical' AND impact = 'low' THEN 4
+            WHEN probability = 'critical' AND impact = 'medium' THEN 8
+            WHEN probability = 'critical' AND impact = 'high' THEN 12
+            WHEN probability = 'critical' AND impact = 'critical' THEN 16
+            ELSE 0
+        END
+    ) STORED,
+    status ENUM('identified', 'assessed', 'mitigated', 'monitored', 'closed', 'escalated') NOT NULL DEFAULT 'identified',
+    mitigation_strategy TEXT,
+    contingency_plan TEXT,
+    owner_id VARCHAR(36),
+    assigned_to VARCHAR(36),
+    due_date DATE,
+    escalated_to_issue_id VARCHAR(36) NULL,
+    created_by VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Project Issues Table
+CREATE TABLE project_issues (
+    id VARCHAR(36) PRIMARY KEY,
+    project_id VARCHAR(36) NOT NULL,
+    risk_id VARCHAR(36) NULL, -- If escalated from risk
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    category ENUM('technical', 'financial', 'regulatory', 'stakeholder', 'environmental', 'operational', 'schedule', 'quality') NOT NULL,
+    severity ENUM('low', 'medium', 'high', 'critical') NOT NULL DEFAULT 'medium',
+    priority ENUM('low', 'medium', 'high', 'urgent') NOT NULL DEFAULT 'medium',
+    status ENUM('open', 'investigating', 'resolving', 'resolved', 'closed', 'escalated') NOT NULL DEFAULT 'open',
+    impact_description TEXT,
+    root_cause TEXT,
+    resolution_plan TEXT,
+    actual_resolution TEXT,
+    owner_id VARCHAR(36),
+    assigned_to VARCHAR(36),
+    reported_by VARCHAR(36) NOT NULL,
+    due_date DATE,
+    resolved_date DATE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (risk_id) REFERENCES project_risks(id) ON DELETE SET NULL,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (reported_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Project Decisions Table
+CREATE TABLE project_decisions (
+    id VARCHAR(36) PRIMARY KEY,
+    project_id VARCHAR(36) NOT NULL,
+    issue_id VARCHAR(36) NULL, -- If decision is related to an issue
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    decision_type ENUM('technical', 'business', 'resource', 'schedule', 'scope', 'quality', 'risk') NOT NULL,
+    decision_status ENUM('pending', 'approved', 'rejected', 'deferred', 'implemented') NOT NULL DEFAULT 'pending',
+    decision_criteria TEXT,
+    options_considered TEXT,
+    chosen_option TEXT,
+    rationale TEXT,
+    decision_maker VARCHAR(36),
+    stakeholders JSON, -- Array of stakeholder IDs and their roles
+    approval_required BOOLEAN DEFAULT FALSE,
+    approved_by VARCHAR(36) NULL,
+    approved_at TIMESTAMP NULL,
+    implementation_deadline DATE,
+    created_by VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (issue_id) REFERENCES project_issues(id) ON DELETE SET NULL,
+    FOREIGN KEY (decision_maker) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Project Actions Table
+CREATE TABLE project_actions (
+    id VARCHAR(36) PRIMARY KEY,
+    project_id VARCHAR(36) NOT NULL,
+    decision_id VARCHAR(36) NULL, -- If action is from a decision
+    issue_id VARCHAR(36) NULL, -- If action is to resolve an issue
+    risk_id VARCHAR(36) NULL, -- If action is to mitigate a risk
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    action_type ENUM('mitigation', 'resolution', 'implementation', 'monitoring', 'communication', 'escalation') NOT NULL,
+    priority ENUM('low', 'medium', 'high', 'urgent') NOT NULL DEFAULT 'medium',
+    status ENUM('pending', 'in_progress', 'completed', 'cancelled', 'on_hold') NOT NULL DEFAULT 'pending',
+    assigned_to VARCHAR(36),
+    created_by VARCHAR(36) NOT NULL,
+    due_date DATE,
+    completed_date DATE NULL,
+    completion_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (decision_id) REFERENCES project_decisions(id) ON DELETE SET NULL,
+    FOREIGN KEY (issue_id) REFERENCES project_issues(id) ON DELETE SET NULL,
+    FOREIGN KEY (risk_id) REFERENCES project_risks(id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Add indexes for better performance
+CREATE INDEX idx_project_risks_project_id ON project_risks(project_id);
+CREATE INDEX idx_project_risks_status ON project_risks(status);
+CREATE INDEX idx_project_risks_risk_score ON project_risks(risk_score);
+CREATE INDEX idx_project_risks_assigned_to ON project_risks(assigned_to);
+
+CREATE INDEX idx_project_issues_project_id ON project_issues(project_id);
+CREATE INDEX idx_project_issues_status ON project_issues(status);
+CREATE INDEX idx_project_issues_severity ON project_issues(severity);
+CREATE INDEX idx_project_issues_assigned_to ON project_issues(assigned_to);
+
+CREATE INDEX idx_project_decisions_project_id ON project_decisions(project_id);
+CREATE INDEX idx_project_decisions_status ON project_decisions(decision_status);
+CREATE INDEX idx_project_decisions_decision_maker ON project_decisions(decision_maker);
+
+CREATE INDEX idx_project_actions_project_id ON project_actions(project_id);
+CREATE INDEX idx_project_actions_status ON project_actions(status);
+CREATE INDEX idx_project_actions_assigned_to ON project_actions(assigned_to);
+CREATE INDEX idx_project_actions_due_date ON project_actions(due_date);
+
+-- Sample data for testing
+INSERT INTO project_risks (id, project_id, title, description, category, probability, impact, status, mitigation_strategy, owner_id, assigned_to, created_by) VALUES
+('risk-1', 'proj-pm-1', 'Weather delays during construction', 'Heavy rainfall during construction season could delay project timeline', 'environmental', 'medium', 'high', 'identified', 'Monitor weather forecasts and have indoor work alternatives ready', 'user-6', 'user-6', 'user-6'),
+('risk-2', 'proj-pm-1', 'Material cost inflation', 'Rising material costs could exceed budget allocation', 'financial', 'high', 'medium', 'assessed', 'Lock in material prices early and maintain 10% contingency buffer', 'user-6', 'user-6', 'user-6'),
+('risk-3', 'proj-pm-2', 'Permit approval delays', 'Regulatory approval process may take longer than expected', 'regulatory', 'medium', 'high', 'monitored', 'Submit applications early and maintain regular contact with authorities', 'user-6', 'user-6', 'user-6');
+
+INSERT INTO project_issues (id, project_id, title, description, category, severity, priority, status, impact_description, owner_id, assigned_to, reported_by) VALUES
+('issue-1', 'proj-pm-1', 'Foundation excavation delays', 'Unexpected rock formation discovered during excavation', 'technical', 'high', 'high', 'investigating', 'Project timeline delayed by 2 weeks, additional costs for specialized equipment', 'user-6', 'user-6', 'user-6'),
+('issue-2', 'proj-pm-2', 'Stakeholder resistance', 'Local community concerns about project impact', 'stakeholder', 'medium', 'medium', 'open', 'Potential delays in approval process and increased communication requirements', 'user-6', 'user-6', 'user-6');
+
+INSERT INTO project_decisions (id, project_id, issue_id, title, description, decision_type, decision_status, decision_criteria, options_considered, chosen_option, rationale, decision_maker, created_by) VALUES
+('decision-1', 'proj-pm-1', 'issue-1', 'Equipment rental vs purchase', 'Decide whether to rent specialized equipment or purchase for rock excavation', 'technical', 'approved', 'Cost, timeline, future use', '["Rent equipment for 2 weeks", "Purchase equipment", "Subcontract to specialized company"]', 'Subcontract to specialized company', 'Most cost-effective and fastest solution', 'user-6', 'user-6'),
+('decision-2', 'proj-pm-2', 'issue-2', 'Community engagement approach', 'How to address community concerns about the project', 'stakeholder', 'pending', 'Transparency, community buy-in, timeline', '["Public meeting", "Individual consultations", "Information sessions"]', 'Public meeting', 'Most transparent and efficient approach', 'user-6', 'user-6');
+
+INSERT INTO project_actions (id, project_id, decision_id, issue_id, title, description, action_type, priority, status, assigned_to, created_by, due_date) VALUES
+('action-1', 'proj-pm-1', 'decision-1', 'issue-1', 'Contact specialized excavation company', 'Research and contact companies that specialize in rock excavation', 'resolution', 'high', 'in_progress', 'user-6', 'user-6', '2024-02-15'),
+('action-2', 'proj-pm-2', 'decision-2', 'issue-2', 'Schedule public meeting', 'Organize and schedule public meeting to address community concerns', 'communication', 'medium', 'pending', 'user-6', 'user-6', '2024-02-20'),
+('action-3', 'proj-pm-1', NULL, NULL, 'Monitor weather forecasts', 'Regular monitoring of weather conditions for construction planning', 'monitoring', 'medium', 'in_progress', 'user-6', 'user-6', '2024-03-01');
