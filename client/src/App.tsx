@@ -12,6 +12,8 @@ import Region2Portal from "@/pages/Region2Portal";
 import EmployeeDashboard from "@/pages/EmployeeDashboard";
 import EmployeeDirectory from "@/pages/EmployeeDirectory";
 import LoginPage from "@/pages/LoginPage";
+import StaffDashboard from "@/pages/StaffDashboard";
+import PMDashboard from "@/pages/PMDashboard";
 import MinisterialDashboard from "@/pages/MinisterialDashboard";
 import NotFound from "@/pages/NotFound";
 
@@ -23,8 +25,10 @@ function Router() {
       <Route path="/rdc/region-2" component={Region2Portal} />
       <Route path="/rdc/:id" component={RDCPortal} />
       <Route path="/jurisdiction/:id" component={JurisdictionPortal} />
-      <Route path="/staff/dashboard" component={EmployeeDashboard} />
+      <Route path="/staff/dashboard" component={StaffDashboard} />
       <Route path="/staff/directory" component={EmployeeDirectory} />
+      <Route path="/pm/dashboard" component={PMDashboard} />
+      <Route path="/admin/dashboard" component={StaffDashboard} />
       <Route path="/ministerial/dashboard" component={MinisterialDashboard} />
       <Route component={NotFound} />
     </Switch>

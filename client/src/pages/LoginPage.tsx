@@ -1,5 +1,8 @@
-import LoginForm from "@/components/LoginForm";
+import React from 'react';
+import LoginForm from '../components/LoginForm';
 
-export default function LoginPage() {
-  return <LoginForm onSuccess={() => window.location.href = '/'} />;
-}
+const LoginPage: React.FC = () => {
+  return <LoginForm />;
+};
+
+export default LoginPage;

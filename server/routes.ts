@@ -8,6 +8,7 @@ import {
   directoryFiltersSchema
 } from "@shared/schema";
 import session from "express-session";
+import { registerProjectTrackerRoutes } from "./project-tracker-routes";
 
 // Authentication middleware
 const requireAuth = (req: any, res: any, next: any) => {
@@ -506,6 +507,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  // Register Project Tracker routes
+  registerProjectTrackerRoutes(app);
 
   const httpServer = createServer(app);
 

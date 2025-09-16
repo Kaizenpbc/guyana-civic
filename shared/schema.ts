@@ -7,7 +7,7 @@ import { z } from "zod";
 export const issueStatusEnum = pgEnum("issue_status", ["submitted", "acknowledged", "in_progress", "resolved", "closed"]);
 export const issuePriorityEnum = pgEnum("issue_priority", ["low", "medium", "high", "urgent"]);
 export const issueCategoryEnum = pgEnum("issue_category", ["roads", "drainage", "utilities", "waste", "lighting", "parks", "other"]);
-export const userRoleEnum = pgEnum("user_role", ["citizen", "staff", "admin", "super_admin"]);
+export const userRoleEnum = pgEnum("user_role", ["citizen", "staff", "pm", "admin", "super_admin"]);
 export const timesheetStatusEnum = pgEnum("timesheet_status", ["draft", "submitted", "approved", "rejected"]);
 export const leaveTypeEnum = pgEnum("leave_type", ["vacation", "sick", "personal", "bereavement", "maternity", "paternity"]);
 export const leaveStatusEnum = pgEnum("leave_status", ["pending", "approved", "denied"]);
@@ -234,7 +234,7 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 export const directoryFiltersSchema = z.object({
   query: z.string().optional(),
   department: z.string().optional(),
-  role: z.enum(["citizen", "staff", "admin", "super_admin"]).optional(),
+  role: z.enum(["citizen", "staff", "pm", "admin", "super_admin"]).optional(),
   status: z.enum(["active", "inactive", "all"]).default("active"),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
@@ -251,7 +251,7 @@ export type EmployeeDirectoryItem = {
   fullName: string;
   department: string;
   position: string;
-  role: "citizen" | "staff" | "admin" | "super_admin";
+  role: "citizen" | "staff" | "pm" | "admin" | "super_admin";
   isActive: boolean;
   email: string;
   phone?: string;

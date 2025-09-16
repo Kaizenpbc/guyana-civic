@@ -1,18 +1,61 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, TrendingUp, MapPin, AlertCircle, CheckCircle, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import ServiceCard from '../components/ServiceCard';
 import DashboardWidget from '../components/DashboardWidget';
-import ProjectTracker from '../components/ProjectTracker';
+import ProjectTable from '../components/ProjectTable';
 import FeedbackForm from '../components/FeedbackForm';
+
+// Types for our API
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  status: 'planning' | 'approved' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
+  progressPercentage: number;
+  category: string;
+  priority: string;
+  scope: string;
+  fundingSource: string;
+  budgetAllocated: number;
+  budgetSpent: number;
+  currency: string;
+  plannedStartDate: string;
+  plannedEndDate: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ProjectListResponse {
+  projects: Project[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// API function to fetch projects for Region 2
+const fetchRegion2Projects = async (): Promise<ProjectListResponse> => {
+  const response = await fetch('/api/projects?jurisdictionId=region-2');
+  if (!response.ok) throw new Error('Failed to fetch projects');
+  return response.json();
+};
 
 const Region2Portal = () => {
   const [, setLocation] = useLocation();
   const [userType, setUserType] = useState<'resident' | 'farmer' | 'business'>('resident');
   const [showAllServices, setShowAllServices] = useState(false);
+
+  // Fetch projects for Region 2
+  const { data: projectsData, isLoading: projectsLoading, error: projectsError } = useQuery({
+    queryKey: ['projects', 'region-2'],
+    queryFn: fetchRegion2Projects,
+  });
 
   const servicesByUser = {
     resident: ['Issue Reporting', 'Road Issues', 'Document Request', 'Community Programs'],
@@ -325,6 +368,35 @@ const Region2Portal = () => {
                 <span>👥</span>
                 <span className="ml-2">Contact Representatives</span>
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center">Active Projects</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {projectsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-3 border rounded-lg bg-card animate-pulse">
+                      <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                      <div className="h-2 bg-muted rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : projectsError ? (
+                <div className="text-center text-red-500 py-4">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                  <p>Failed to load projects</p>
+                </div>
+              ) : projectsData?.projects && projectsData.projects.length > 0 ? (
+                <ProjectTable projects={projectsData.projects} />
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  <p>No active projects found</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -383,6 +383,17 @@ export class MemStorage implements IStorage {
         jurisdictionId: "jurisdiction-1",
         isActive: false,
         createdAt: new Date()
+      },
+      {
+        id: "user-6",
+        username: "PM",
+        email: "pm@city.gov",
+        fullName: "Project Manager",
+        phone: "+1 (555) 678-9012",
+        role: "pm",
+        jurisdictionId: "region-2",
+        isActive: true,
+        createdAt: new Date()
       }
     ];
 

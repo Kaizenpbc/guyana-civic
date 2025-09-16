@@ -1,72 +1,64 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building, LogIn } from "lucide-react";
+import React, { useState } from 'react';
+import { useLocation } from 'wouter';
+import { useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Building, Lock, User, AlertCircle, Loader2 } from 'lucide-react';
 
 interface LoginFormProps {
   onSuccess?: () => void;
 }
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  fullName: string;
-  role: string;
-  jurisdictionId?: string;
-}
-
-const loginUser = async (credentials: { username: string; password: string }): Promise<{ user: User; message: string }> => {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(credentials),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Login failed');
-  }
-
-  return response.json();
-};
-
-const getCurrentUser = async (): Promise<{ user: User }> => {
-  const response = await fetch('/api/auth/me');
-  if (!response.ok) {
-    throw new Error('Not authenticated');
-  }
-  return response.json();
-};
-
-export default function LoginForm({ onSuccess }: LoginFormProps) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
+  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-
-  // Check if user is already logged in
-  const { data: currentUser, isLoading: checkingAuth } = useQuery({
-    queryKey: ['auth', 'me'],
-    queryFn: getCurrentUser,
-    retry: false,
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setIsLoading(true);
+    setError('');
 
     try {
-      const result = await loginUser({ username, password });
-      queryClient.setQueryData(['auth', 'me'], result);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+
+      // Clear any cached data and refetch user info
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
+      
+      // Redirect based on user role
+      const user = data.user;
+      if (user.role === 'minister' || user.role === 'super_admin') {
+        setLocation('/ministerial/dashboard');
+      } else if (user.role === 'admin') {
+        setLocation('/admin/dashboard');
+      } else if (user.role === 'pm') {
+        setLocation('/pm/dashboard');
+      } else if (user.role === 'staff') {
+        setLocation('/staff/dashboard');
+      } else {
+        setLocation('/');
+      }
+
       onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -75,89 +67,69 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     }
   };
 
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Checking authentication...</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (currentUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Building className="h-6 w-6 text-primary" />
-              <CardTitle>Welcome Back!</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">
-              You are logged in as <strong>{currentUser.user.fullName}</strong>
-            </p>
-            <Button 
-              onClick={() => window.location.href = '/'}
-              className="w-full"
-            >
-              Go to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Building className="h-6 w-6 text-primary" />
-            <CardTitle>Government Portal Login</CardTitle>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+            <Building className="h-6 w-6 text-blue-600" />
           </div>
+          <CardTitle className="text-2xl font-bold">Guyana Civic</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Sign in to access government services
+            Government Project Management System
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                required
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className="pl-10"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="pl-10"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
             </div>
             
             <Button 
@@ -167,30 +139,24 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             >
               {isLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing in...
                 </>
               ) : (
-                <>
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign In
-                </>
+                'Sign In'
               )}
             </Button>
           </form>
           
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">
-              <strong>Demo Credentials:</strong>
-            </p>
+          <div className="mt-6 text-center">
             <p className="text-xs text-muted-foreground">
-              Username: <code>jdoe</code> (Staff)<br/>
-              Username: <code>ssmith</code> (Admin)<br/>
-              Password: <code>any password</code>
+              Access for authorized government personnel only
             </p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default LoginForm;
