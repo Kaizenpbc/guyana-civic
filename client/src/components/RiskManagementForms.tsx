@@ -147,17 +147,17 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
   };
 
   const tabs = [
-    { id: 'risk', label: 'Raise Risk', icon: AlertTriangle, color: 'text-red-600' },
-    { id: 'issue', label: 'Record Issue', icon: AlertTriangle, color: 'text-orange-600' },
-    { id: 'decision', label: 'Record Decision', icon: CheckCircle, color: 'text-blue-600' },
-    { id: 'action', label: 'Record Action', icon: Target, color: 'text-green-600' }
+    { id: 'risk', label: 'Risk', icon: AlertTriangle, color: 'text-red-600' },
+    { id: 'issue', label: 'Issue', icon: AlertTriangle, color: 'text-orange-600' },
+    { id: 'decision', label: 'Decision', icon: CheckCircle, color: 'text-blue-600' },
+    { id: 'action', label: 'Action', icon: Target, color: 'text-green-600' }
   ] as const;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-xl font-semibold">Risk Management</CardTitle>
+          <CardTitle className="text-xl font-semibold">RAID Management</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -261,6 +261,49 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
                 </div>
               </div>
 
+              {/* Risk Score Display */}
+              {riskForm.probability && riskForm.impact && (
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Risk Score:</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-bold text-gray-900">
+                        {(() => {
+                          const probabilityScores = { low: 1, medium: 2, high: 3, critical: 4 };
+                          const impactScores = { low: 1, medium: 2, high: 3, critical: 4 };
+                          const score = probabilityScores[riskForm.probability] * impactScores[riskForm.impact];
+                          return score;
+                        })()}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        (() => {
+                          const probabilityScores = { low: 1, medium: 2, high: 3, critical: 4 };
+                          const impactScores = { low: 1, medium: 2, high: 3, critical: 4 };
+                          const score = probabilityScores[riskForm.probability] * impactScores[riskForm.impact];
+                          if (score <= 4) return 'bg-green-100 text-green-800';
+                          if (score <= 8) return 'bg-yellow-100 text-yellow-800';
+                          if (score <= 12) return 'bg-orange-100 text-orange-800';
+                          return 'bg-red-100 text-red-800';
+                        })()
+                      }`}>
+                        {(() => {
+                          const probabilityScores = { low: 1, medium: 2, high: 3, critical: 4 };
+                          const impactScores = { low: 1, medium: 2, high: 3, critical: 4 };
+                          const score = probabilityScores[riskForm.probability] * impactScores[riskForm.impact];
+                          if (score <= 4) return 'Low Risk';
+                          if (score <= 8) return 'Medium Risk';
+                          if (score <= 12) return 'High Risk';
+                          return 'Critical Risk';
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-600">
+                    Probability ({riskForm.probability}) × Impact ({riskForm.impact}) = Risk Score
+                  </div>
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="risk-mitigation">Mitigation Strategy</Label>
                 <Textarea
@@ -290,6 +333,16 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
                   type="date"
                   value={riskForm.due_date}
                   onChange={(e) => setRiskForm({ ...riskForm, due_date: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="risk-owner">Owner</Label>
+                <Input
+                  id="risk-owner"
+                  value={riskForm.owner_id || ''}
+                  onChange={(e) => setRiskForm({ ...riskForm, owner_id: e.target.value })}
+                  placeholder="Enter owner name or ID"
                 />
               </div>
 
@@ -423,6 +476,16 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
                 />
               </div>
 
+              <div>
+                <Label htmlFor="issue-owner">Owner</Label>
+                <Input
+                  id="issue-owner"
+                  value={issueForm.owner_id || ''}
+                  onChange={(e) => setIssueForm({ ...issueForm, owner_id: e.target.value })}
+                  placeholder="Enter owner name or ID"
+                />
+              </div>
+
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={onClose}>
                   Cancel
@@ -529,6 +592,16 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
                   type="date"
                   value={decisionForm.implementation_deadline}
                   onChange={(e) => setDecisionForm({ ...decisionForm, implementation_deadline: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="decision-maker">Decision Maker</Label>
+                <Input
+                  id="decision-maker"
+                  value={decisionForm.decision_maker || ''}
+                  onChange={(e) => setDecisionForm({ ...decisionForm, decision_maker: e.target.value })}
+                  placeholder="Enter decision maker name or ID"
                 />
               </div>
 

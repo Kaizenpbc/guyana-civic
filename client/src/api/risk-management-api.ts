@@ -95,7 +95,9 @@ export interface ProjectAction {
 // =============================================
 
 export const getProjectRisks = async (projectId: string): Promise<{ risks: ProjectRisk[], total: number }> => {
-  const response = await fetch(`/api/projects/${projectId}/risks`);
+  const response = await fetch(`/api/projects/${projectId}/risks`, {
+    credentials: 'include'
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch risks');
   }
@@ -108,6 +110,7 @@ export const createRisk = async (projectId: string, riskData: Partial<ProjectRis
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(riskData),
   });
   if (!response.ok) {
@@ -122,6 +125,7 @@ export const updateRisk = async (riskId: string, updateData: Partial<ProjectRisk
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(updateData),
   });
   if (!response.ok) {
@@ -136,6 +140,7 @@ export const escalateRiskToIssue = async (riskId: string, issueData: Partial<Pro
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(issueData),
   });
   if (!response.ok) {
@@ -149,7 +154,9 @@ export const escalateRiskToIssue = async (riskId: string, issueData: Partial<Pro
 // =============================================
 
 export const getProjectIssues = async (projectId: string): Promise<{ issues: ProjectIssue[], total: number }> => {
-  const response = await fetch(`/api/projects/${projectId}/issues`);
+  const response = await fetch(`/api/projects/${projectId}/issues`, {
+    credentials: 'include'
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch issues');
   }
@@ -162,6 +169,7 @@ export const createIssue = async (projectId: string, issueData: Partial<ProjectI
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(issueData),
   });
   if (!response.ok) {
@@ -176,6 +184,7 @@ export const updateIssue = async (issueId: string, updateData: Partial<ProjectIs
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(updateData),
   });
   if (!response.ok) {
@@ -189,7 +198,9 @@ export const updateIssue = async (issueId: string, updateData: Partial<ProjectIs
 // =============================================
 
 export const getProjectDecisions = async (projectId: string): Promise<{ decisions: ProjectDecision[], total: number }> => {
-  const response = await fetch(`/api/projects/${projectId}/decisions`);
+  const response = await fetch(`/api/projects/${projectId}/decisions`, {
+    credentials: 'include'
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch decisions');
   }
@@ -202,6 +213,7 @@ export const createDecision = async (projectId: string, decisionData: Partial<Pr
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(decisionData),
   });
   if (!response.ok) {
@@ -216,6 +228,7 @@ export const updateDecision = async (decisionId: string, updateData: Partial<Pro
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(updateData),
   });
   if (!response.ok) {
@@ -229,7 +242,9 @@ export const updateDecision = async (decisionId: string, updateData: Partial<Pro
 // =============================================
 
 export const getProjectActions = async (projectId: string): Promise<{ actions: ProjectAction[], total: number }> => {
-  const response = await fetch(`/api/projects/${projectId}/actions`);
+  const response = await fetch(`/api/projects/${projectId}/actions`, {
+    credentials: 'include'
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch actions');
   }
@@ -242,6 +257,7 @@ export const createAction = async (projectId: string, actionData: Partial<Projec
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(actionData),
   });
   if (!response.ok) {
@@ -256,6 +272,7 @@ export const updateAction = async (actionId: string, updateData: Partial<Project
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(updateData),
   });
   if (!response.ok) {
@@ -297,17 +314,17 @@ export const getStatusColor = (status: string): string => {
     'investigating': 'text-yellow-600 bg-yellow-100',
     'resolving': 'text-blue-600 bg-blue-100',
     'resolved': 'text-green-600 bg-green-100',
-    'closed': 'text-gray-600 bg-gray-100',
+    'issue_closed': 'text-gray-600 bg-gray-100',
     
     // Decision statuses
-    'pending': 'text-yellow-600 bg-yellow-100',
+    'decision_pending': 'text-yellow-600 bg-yellow-100',
     'approved': 'text-green-600 bg-green-100',
     'rejected': 'text-red-600 bg-red-100',
     'deferred': 'text-gray-600 bg-gray-100',
     'implemented': 'text-blue-600 bg-blue-100',
     
     // Action statuses
-    'pending': 'text-gray-600 bg-gray-100',
+    'action_pending': 'text-gray-600 bg-gray-100',
     'in_progress': 'text-blue-600 bg-blue-100',
     'completed': 'text-green-600 bg-green-100',
     'cancelled': 'text-red-600 bg-red-100',
@@ -328,3 +345,4 @@ export const getPriorityColor = (priority: string): string => {
   
   return priorityColors[priority] || 'text-gray-600 bg-gray-100';
 };
+

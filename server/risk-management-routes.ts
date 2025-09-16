@@ -1,7 +1,22 @@
-import express from 'express';
-import { requireAuth, requireStaff } from './auth';
+import { Router } from 'express';
 
-const app = express();
+// Authentication middleware (copied from routes.ts)
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.session?.user) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  req.user = req.session.user;
+  next();
+};
+
+const requireStaff = (req: any, res: any, next: any) => {
+  if (!req.user || !["staff", "admin", "super_admin", "pm"].includes(req.user.role)) {
+    return res.status(403).json({ error: "Staff access required" });
+  }
+  next();
+};
+
+const router = Router();
 
 // =============================================
 // RISK MANAGEMENT API ROUTES (Phase 1)
@@ -100,7 +115,7 @@ interface ProjectAction {
 // =============================================
 
 // Get all risks for a project
-app.get("/api/projects/:projectId/risks", requireAuth, requireStaff, async (req, res) => {
+router.get("/api/projects/:projectId/risks", requireAuth, requireStaff, async (req, res) => {
   try {
     const { projectId } = req.params;
     
@@ -150,27 +165,34 @@ app.get("/api/projects/:projectId/risks", requireAuth, requireStaff, async (req,
 });
 
 // Create a new risk
-app.post("/api/projects/:projectId/risks", requireAuth, requireStaff, async (req, res) => {
+router.post("/api/projects/:projectId/risks", requireAuth, requireStaff, async (req, res) => {
   try {
     const { projectId } = req.params;
     const riskData = req.body;
     
+    // Calculate risk score based on probability and impact
+    const probabilityScores: { [key: string]: number } = { low: 1, medium: 2, high: 3, critical: 4 };
+    const impactScores: { [key: string]: number } = { low: 1, medium: 2, high: 3, critical: 4 };
+    const probability = riskData.probability || 'medium';
+    const impact = riskData.impact || 'medium';
+    const riskScore = probabilityScores[probability] * impactScores[impact];
+
     const newRisk: ProjectRisk = {
       id: `risk-${Date.now()}`,
       project_id: projectId,
       title: riskData.title,
       description: riskData.description,
       category: riskData.category,
-      probability: riskData.probability || 'medium',
-      impact: riskData.impact || 'medium',
-      risk_score: 0, // Will be calculated by database
+      probability: probability,
+      impact: impact,
+      risk_score: riskScore,
       status: 'identified',
       mitigation_strategy: riskData.mitigation_strategy,
       contingency_plan: riskData.contingency_plan,
       owner_id: riskData.owner_id,
       assigned_to: riskData.assigned_to,
       due_date: riskData.due_date,
-      created_by: req.user.id,
+      created_by: req.user?.id || 'unknown',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -186,7 +208,7 @@ app.post("/api/projects/:projectId/risks", requireAuth, requireStaff, async (req
 });
 
 // Update a risk
-app.put("/api/risks/:riskId", requireAuth, requireStaff, async (req, res) => {
+router.put("/api/risks/:riskId", requireAuth, requireStaff, async (req, res) => {
   try {
     const { riskId } = req.params;
     const updateData = req.body;
@@ -202,7 +224,7 @@ app.put("/api/risks/:riskId", requireAuth, requireStaff, async (req, res) => {
 });
 
 // Escalate risk to issue
-app.post("/api/risks/:riskId/escalate", requireAuth, requireStaff, async (req, res) => {
+router.post("/api/risks/:riskId/escalate", requireAuth, requireStaff, async (req, res) => {
   try {
     const { riskId } = req.params;
     const issueData = req.body;
@@ -222,7 +244,7 @@ app.post("/api/risks/:riskId/escalate", requireAuth, requireStaff, async (req, r
 // =============================================
 
 // Get all issues for a project
-app.get("/api/projects/:projectId/issues", requireAuth, requireStaff, async (req, res) => {
+router.get("/api/projects/:projectId/issues", requireAuth, requireStaff, async (req, res) => {
   try {
     const { projectId } = req.params;
     
@@ -254,7 +276,7 @@ app.get("/api/projects/:projectId/issues", requireAuth, requireStaff, async (req
 });
 
 // Create a new issue
-app.post("/api/projects/:projectId/issues", requireAuth, requireStaff, async (req, res) => {
+router.post("/api/projects/:projectId/issues", requireAuth, requireStaff, async (req, res) => {
   try {
     const { projectId } = req.params;
     const issueData = req.body;
@@ -274,7 +296,7 @@ app.post("/api/projects/:projectId/issues", requireAuth, requireStaff, async (re
       resolution_plan: issueData.resolution_plan,
       owner_id: issueData.owner_id,
       assigned_to: issueData.assigned_to,
-      reported_by: req.user.id,
+      reported_by: req.user?.id || 'unknown',
       due_date: issueData.due_date,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -295,7 +317,7 @@ app.post("/api/projects/:projectId/issues", requireAuth, requireStaff, async (re
 // =============================================
 
 // Get all decisions for a project
-app.get("/api/projects/:projectId/decisions", requireAuth, requireStaff, async (req, res) => {
+router.get("/api/projects/:projectId/decisions", requireAuth, requireStaff, async (req, res) => {
   try {
     const { projectId } = req.params;
     
@@ -329,7 +351,7 @@ app.get("/api/projects/:projectId/decisions", requireAuth, requireStaff, async (
 });
 
 // Create a new decision
-app.post("/api/projects/:projectId/decisions", requireAuth, requireStaff, async (req, res) => {
+router.post("/api/projects/:projectId/decisions", requireAuth, requireStaff, async (req, res) => {
   try {
     const { projectId } = req.params;
     const decisionData = req.body;
@@ -350,7 +372,7 @@ app.post("/api/projects/:projectId/decisions", requireAuth, requireStaff, async 
       stakeholders: decisionData.stakeholders,
       approval_required: decisionData.approval_required || false,
       implementation_deadline: decisionData.implementation_deadline,
-      created_by: req.user.id,
+      created_by: req.user?.id || 'unknown',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -370,7 +392,7 @@ app.post("/api/projects/:projectId/decisions", requireAuth, requireStaff, async 
 // =============================================
 
 // Get all actions for a project
-app.get("/api/projects/:projectId/actions", requireAuth, requireStaff, async (req, res) => {
+router.get("/api/projects/:projectId/actions", requireAuth, requireStaff, async (req, res) => {
   try {
     const { projectId } = req.params;
     
@@ -402,7 +424,7 @@ app.get("/api/projects/:projectId/actions", requireAuth, requireStaff, async (re
 });
 
 // Create a new action
-app.post("/api/projects/:projectId/actions", requireAuth, requireStaff, async (req, res) => {
+router.post("/api/projects/:projectId/actions", requireAuth, requireStaff, async (req, res) => {
   try {
     const { projectId } = req.params;
     const actionData = req.body;
@@ -419,7 +441,7 @@ app.post("/api/projects/:projectId/actions", requireAuth, requireStaff, async (r
       priority: actionData.priority || 'medium',
       status: 'pending',
       assigned_to: actionData.assigned_to,
-      created_by: req.user.id,
+      created_by: req.user?.id || 'unknown',
       due_date: actionData.due_date,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -436,7 +458,7 @@ app.post("/api/projects/:projectId/actions", requireAuth, requireStaff, async (r
 });
 
 // Update action status
-app.put("/api/actions/:actionId", requireAuth, requireStaff, async (req, res) => {
+router.put("/api/actions/:actionId", requireAuth, requireStaff, async (req, res) => {
   try {
     const { actionId } = req.params;
     const updateData = req.body;
@@ -451,4 +473,143 @@ app.put("/api/actions/:actionId", requireAuth, requireStaff, async (req, res) =>
   }
 });
 
-export default app;
+// =============================================
+// GET ENDPOINTS FOR RAID DASHBOARD
+// =============================================
+
+// Get all risks for a project
+router.get("/api/projects/:projectId/risks", requireAuth, requireStaff, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    
+    // TODO: Fetch from database
+    // For now, return mock data
+    const mockRisks: ProjectRisk[] = [
+      {
+        id: 'risk-1',
+        project_id: projectId,
+        title: 'Weather Delays',
+        description: 'Potential delays due to rainy season',
+        category: 'environmental',
+        probability: 'high',
+        impact: 'medium',
+        risk_score: 6,
+        status: 'identified',
+        mitigation_strategy: 'Schedule buffer time',
+        contingency_plan: 'Extend project timeline',
+        owner_id: 'user-6',
+        assigned_to: 'user-6',
+        due_date: '2025-10-01',
+        created_by: 'user-6',
+        created_at: '2025-09-16T20:00:00.000Z',
+        updated_at: '2025-09-16T20:00:00.000Z'
+      }
+    ];
+    
+    res.json({ risks: mockRisks });
+  } catch (error) {
+    console.error('Error fetching risks:', error);
+    res.status(500).json({ error: 'Failed to fetch risks' });
+  }
+});
+
+// Get all issues for a project
+router.get("/api/projects/:projectId/issues", requireAuth, requireStaff, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    
+    // TODO: Fetch from database
+    const mockIssues: ProjectIssue[] = [
+      {
+        id: 'issue-1',
+        project_id: projectId,
+        title: 'Material Shortage',
+        description: 'Concrete delivery delayed by 2 weeks',
+        category: 'operational',
+        severity: 'high',
+        priority: 'high',
+        status: 'open',
+        impact_description: 'Will delay foundation work',
+        resolution_plan: 'Source alternative supplier',
+        owner_id: 'user-6',
+        assigned_to: 'user-6',
+        due_date: '2025-09-25',
+        reported_by: 'user-6',
+        created_at: '2025-09-16T20:00:00.000Z',
+        updated_at: '2025-09-16T20:00:00.000Z'
+      }
+    ];
+    
+    res.json({ issues: mockIssues });
+  } catch (error) {
+    console.error('Error fetching issues:', error);
+    res.status(500).json({ error: 'Failed to fetch issues' });
+  }
+});
+
+// Get all decisions for a project
+router.get("/api/projects/:projectId/decisions", requireAuth, requireStaff, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    
+    // TODO: Fetch from database
+    const mockDecisions: ProjectDecision[] = [
+      {
+        id: 'decision-1',
+        project_id: projectId,
+        title: 'Architecture Selection',
+        description: 'Choose between steel and concrete structure',
+        decision_type: 'technical',
+        decision_status: 'approved',
+        decision_criteria: 'Cost, durability, timeline',
+        options_considered: 'Steel frame, Concrete frame, Hybrid',
+        chosen_option: 'Concrete frame',
+        rationale: 'Best balance of cost and durability',
+        implementation_deadline: '2025-10-15',
+        decision_maker: 'Technical Lead',
+        approval_required: false,
+        created_by: 'user-6',
+        created_at: '2025-09-16T20:00:00.000Z',
+        updated_at: '2025-09-16T20:00:00.000Z'
+      }
+    ];
+    
+    res.json({ decisions: mockDecisions });
+  } catch (error) {
+    console.error('Error fetching decisions:', error);
+    res.status(500).json({ error: 'Failed to fetch decisions' });
+  }
+});
+
+// Get all actions for a project
+router.get("/api/projects/:projectId/actions", requireAuth, requireStaff, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    
+    // TODO: Fetch from database
+    const mockActions: ProjectAction[] = [
+      {
+        id: 'action-1',
+        project_id: projectId,
+        title: 'Site Preparation',
+        description: 'Clear and level the construction site',
+        action_type: 'implementation',
+        priority: 'high',
+        status: 'in_progress',
+        assigned_to: 'user-6',
+        due_date: '2025-09-20',
+        completion_notes: 'Site cleared, leveled, and marked',
+        created_by: 'user-6',
+        created_at: '2025-09-16T20:00:00.000Z',
+        updated_at: '2025-09-16T20:00:00.000Z'
+      }
+    ];
+    
+    res.json({ actions: mockActions });
+  } catch (error) {
+    console.error('Error fetching actions:', error);
+    res.status(500).json({ error: 'Failed to fetch actions' });
+  }
+});
+
+export default router;

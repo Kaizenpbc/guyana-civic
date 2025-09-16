@@ -38,10 +38,13 @@ import {
   type ProjectAction
 } from '@/api/risk-management-api';
 import RiskManagementForms from '@/components/RiskManagementForms';
+import RAIDDashboard from '@/components/RAIDDashboard';
 
 // API function to get current user
 const getCurrentUser = async (): Promise<{ user: any }> => {
-  const response = await fetch('/api/auth/me');
+  const response = await fetch('/api/auth/me', {
+    credentials: 'include'
+  });
   if (!response.ok) {
     throw new Error('Not authenticated');
   }
@@ -50,7 +53,9 @@ const getCurrentUser = async (): Promise<{ user: any }> => {
 
 // API function to get PM's assigned projects
 const getPMProjects = async (pmUserId: string): Promise<{ projects: any[], total: number, page: number, limit: number, totalPages: number }> => {
-  const response = await fetch(`/api/projects?assignedTo=${pmUserId}`);
+  const response = await fetch(`/api/projects?assignedTo=${pmUserId}`, {
+    credentials: 'include'
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch projects');
   }
@@ -81,6 +86,8 @@ const PMDashboard: React.FC = () => {
   // Risk Management state
   const [showRiskManagement, setShowRiskManagement] = useState(false);
   const [selectedProjectForRisk, setSelectedProjectForRisk] = useState<any>(null);
+  const [showRAIDDashboard, setShowRAIDDashboard] = useState(false);
+  const [selectedProjectForRAID, setSelectedProjectForRAID] = useState<any>(null);
   
   const { data: authData, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
@@ -231,6 +238,25 @@ const PMDashboard: React.FC = () => {
   const handleRiskManagementSuccess = () => {
     // Refresh data after successful creation
     queryClient.invalidateQueries({ queryKey: ['projects', 'pm', user.id] });
+  };
+
+  // RAID Dashboard handlers
+  const handleViewRAID = (project: any) => {
+    setSelectedProjectForRAID(project);
+    setShowRAIDDashboard(true);
+  };
+
+  const handleRAIDDashboardClose = () => {
+    setShowRAIDDashboard(false);
+    setSelectedProjectForRAID(null);
+  };
+
+  const handleRAIDAddNew = (type: 'risk' | 'issue' | 'decision' | 'action') => {
+    // Close RAID dashboard and open the appropriate form
+    setShowRAIDDashboard(false);
+    setSelectedProjectForRisk(selectedProjectForRAID);
+    setShowRiskManagement(true);
+    // TODO: Set the active tab in RiskManagementForms to the correct type
   };
 
 
@@ -1970,13 +1996,30 @@ const PMDashboard: React.FC = () => {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
-                              View Risks
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-blue-600 hover:text-blue-800"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewRAID(project);
+                              }}
+                            >
+                              View RAID
                             </Button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
-                              View Issues
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-green-600 hover:text-green-800"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProjectForRisk(project);
+                                setShowRiskManagement(true);
+                              }}
+                            >
+                              Add RAID
                             </Button>
                           </td>
                         </tr>
@@ -1998,12 +2041,12 @@ const PMDashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Risk Management Section */}
+          {/* RAID Section */}
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
-                <span>Risk Management</span>
+                <span>RAID</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2014,7 +2057,7 @@ const PMDashboard: React.FC = () => {
                   variant="outline"
                 >
                   <AlertTriangle className="h-6 w-6 text-red-600" />
-                  <span className="text-sm font-medium text-red-700">Raise Risk</span>
+                  <span className="text-sm font-medium text-red-700">Risk</span>
                 </Button>
                 
                 <Button 
@@ -2023,7 +2066,7 @@ const PMDashboard: React.FC = () => {
                   variant="outline"
                 >
                   <AlertTriangle className="h-6 w-6 text-orange-600" />
-                  <span className="text-sm font-medium text-orange-700">Record Issue</span>
+                  <span className="text-sm font-medium text-orange-700">Issue</span>
                 </Button>
                 
                 <Button 
@@ -2032,7 +2075,7 @@ const PMDashboard: React.FC = () => {
                   variant="outline"
                 >
                   <CheckCircle className="h-6 w-6 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-700">Record Decision</span>
+                  <span className="text-sm font-medium text-blue-700">Decision</span>
                 </Button>
                 
                 <Button 
@@ -2049,12 +2092,21 @@ const PMDashboard: React.FC = () => {
         </div>
       </main>
 
-      {/* Risk Management Forms Modal */}
+      {/* RAID Forms Modal */}
       {showRiskManagement && selectedProjectForRisk && (
         <RiskManagementForms
           projectId={selectedProjectForRisk.id}
           onClose={handleRiskManagementClose}
           onSuccess={handleRiskManagementSuccess}
+        />
+      )}
+
+      {showRAIDDashboard && selectedProjectForRAID && (
+        <RAIDDashboard
+          projectId={selectedProjectForRAID.id}
+          projectName={selectedProjectForRAID.name}
+          onClose={handleRAIDDashboardClose}
+          onAddNew={handleRAIDAddNew}
         />
       )}
     </div>

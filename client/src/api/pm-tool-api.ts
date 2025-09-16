@@ -122,6 +122,7 @@ export const createSchedule = async (projectId: string, scheduleData: {
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(scheduleData),
   });
   if (!response.ok) {
