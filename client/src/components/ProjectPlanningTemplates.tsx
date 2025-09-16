@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,16 +58,86 @@ interface ProjectPlanningTemplatesProps {
   projectCategory: string;
   onTemplateSelect: (template: ProjectTemplate) => void;
   onClose: () => void;
+  previouslySelectedPhases?: any[];
+  previouslySelectedDocuments?: any[];
+  isAddMode?: boolean; // True when adding phases to existing schedule
+  existingTasks?: any[]; // Tasks already in the current schedule
 }
 
 const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({ 
   projectCategory, 
   onTemplateSelect, 
-  onClose 
+  onClose,
+  previouslySelectedPhases = [],
+  previouslySelectedDocuments = [],
+  isAddMode = false,
+  existingTasks = []
 }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null);
   const [selectedPhases, setSelectedPhases] = useState<string[]>([]);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+
+  // Initialize with previously selected phases and documents
+  useEffect(() => {
+    if (previouslySelectedPhases.length > 0) {
+      const phaseIds = previouslySelectedPhases
+        .filter(phase => phase.selected)
+        .map(phase => phase.id);
+      setSelectedPhases(phaseIds);
+    }
+    
+    if (previouslySelectedDocuments.length > 0) {
+      const documentIds = previouslySelectedDocuments
+        .filter(doc => doc.selected)
+        .map(doc => doc.id);
+      setSelectedDocuments(documentIds);
+    }
+  }, [previouslySelectedPhases, previouslySelectedDocuments]);
+
+  // Helper functions to check if items were previously selected
+  const isPhasePreviouslySelected = (phaseId: string) => {
+    return previouslySelectedPhases.some(phase => phase.id === phaseId && phase.selected);
+  };
+
+  const isDocumentPreviouslySelected = (documentId: string) => {
+    return previouslySelectedDocuments.some(doc => doc.id === documentId && doc.selected);
+  };
+
+  // Helper functions for task-level visual indicators
+  const getExistingTaskNames = () => {
+    return existingTasks.map(task => task.name.toLowerCase());
+  };
+
+  const isTaskAlreadyInSchedule = (taskName: string) => {
+    const existingNames = getExistingTaskNames();
+    return existingNames.some(name => 
+      name.includes(taskName.toLowerCase()) || 
+      taskName.toLowerCase().includes(name)
+    );
+  };
+
+  const getTaskStatus = (taskName: string) => {
+    if (isTaskAlreadyInSchedule(taskName)) {
+      return 'existing';
+    }
+    return 'new';
+  };
+
+  const getTaskStatusColor = (status: string) => {
+    switch (status) {
+      case 'existing': return 'text-amber-600 bg-amber-50 border-amber-200';
+      case 'new': return 'text-green-600 bg-green-50 border-green-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getTaskStatusIcon = (status: string) => {
+    switch (status) {
+      case 'existing': return '⚠️';
+      case 'new': return '✨';
+      default: return '📋';
+    }
+  };
 
   // Smart Templates for Guyana Infrastructure Projects
   const templates: ProjectTemplate[] = [
@@ -608,6 +678,55 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
         </CardHeader>
       </Card>
 
+      {/* Smart Suggestions for Add Mode */}
+      {isAddMode && existingTasks.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-800">
+              <AlertTriangle className="h-5 w-5" />
+              Smart Suggestions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-sm text-amber-700">
+                You already have <strong>{existingTasks.length} tasks</strong> in your schedule. 
+                Adding new phases may include similar tasks.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-3 bg-white rounded border border-amber-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-amber-600">⚠️</span>
+                    <span className="font-medium text-sm">Existing Tasks</span>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    {existingTasks.slice(0, 3).map((task, index) => (
+                      <div key={index}>• {task.name}</div>
+                    ))}
+                    {existingTasks.length > 3 && (
+                      <div>• +{existingTasks.length - 3} more...</div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-white rounded border border-amber-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-green-600">💡</span>
+                    <span className="font-medium text-sm">Smart Tips</span>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>• Similar tasks will be highlighted</div>
+                    <div>• You can still add phases with duplicate tasks</div>
+                    <div>• Consider if you need the same task in multiple phases</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Project Phases */}
         <Card>
@@ -623,12 +742,13 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
           <CardContent>
             <div className="space-y-4">
               {template.phases.map((phase) => (
-                <div key={phase.id} className="border rounded-lg p-4">
+                <div key={phase.id} className={`border rounded-lg p-4 ${isPhasePreviouslySelected(phase.id) ? 'bg-gray-50 opacity-60' : ''}`}>
                   <div className="flex items-start gap-3">
                     <Checkbox
                       id={phase.id}
                       checked={selectedPhases.includes(phase.id)}
                       onCheckedChange={() => handlePhaseToggle(phase.id)}
+                      disabled={isPhasePreviouslySelected(phase.id)}
                     />
                     <div className="flex-1">
                       <label htmlFor={phase.id} className="font-medium cursor-pointer">
@@ -646,7 +766,39 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
                           <Users className="h-3 w-3" />
                           {phase.tasks.length} tasks
                         </span>
+                        {isAddMode && (
+                          <span className="flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {phase.tasks.filter(task => isTaskAlreadyInSchedule(task.name)).length} already in schedule
+                          </span>
+                        )}
                       </div>
+                      
+                      {/* Task-level visual indicators */}
+                      {isAddMode && phase.tasks.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          <div className="text-xs font-medium text-muted-foreground">Tasks in this phase:</div>
+                          <div className="grid grid-cols-1 gap-1">
+                            {phase.tasks.slice(0, 3).map((task) => {
+                              const status = getTaskStatus(task.name);
+                              return (
+                                <div key={task.id} className={`text-xs px-2 py-1 rounded border ${getTaskStatusColor(status)}`}>
+                                  <span className="mr-1">{getTaskStatusIcon(status)}</span>
+                                  {task.name}
+                                  {status === 'existing' && (
+                                    <span className="ml-1 text-xs opacity-75">(already added)</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {phase.tasks.length > 3 && (
+                              <div className="text-xs text-muted-foreground px-2">
+                                +{phase.tasks.length - 3} more tasks...
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -669,11 +821,12 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
           <CardContent>
             <div className="space-y-3">
               {template.documents.map((doc) => (
-                <div key={doc.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                <div key={doc.id} className={`flex items-start gap-3 p-3 border rounded-lg ${isDocumentPreviouslySelected(doc.id) ? 'bg-gray-50 opacity-60' : ''}`}>
                   <Checkbox
                     id={doc.id}
                     checked={selectedDocuments.includes(doc.id)}
                     onCheckedChange={() => handleDocumentToggle(doc.id)}
+                    disabled={isDocumentPreviouslySelected(doc.id)}
                   />
                   <div className="flex-1">
                     <label htmlFor={doc.id} className="font-medium cursor-pointer flex items-center gap-2">
@@ -703,7 +856,7 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
           onClick={handleGenerateSchedule}
           disabled={selectedPhases.length === 0}
         >
-          Generate Project Schedule
+          {isAddMode ? 'Add Selected Phases' : 'Generate Project Schedule'}
         </Button>
       </div>
     </div>

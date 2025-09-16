@@ -38,6 +38,8 @@ interface ActiveProjectsCardProps {
 }
 
 const ActiveProjectsCard: React.FC<ActiveProjectsCardProps> = ({ projects, onProjectClick }) => {
+  console.log('ActiveProjectsCard received projects:', projects);
+  
   const getStatusInfo = (project: Project) => {
     switch (project.status) {
       case 'initiate':
@@ -91,6 +93,8 @@ const ActiveProjectsCard: React.FC<ActiveProjectsCardProps> = ({ projects, onPro
   const activeProjects = projects.filter(p => 
     ['initiate', 'planning', 'in_progress', 'on_hold'].includes(p.status)
   );
+  
+  console.log('Filtered active projects:', activeProjects);
 
   if (activeProjects.length === 0) {
     return (
@@ -130,7 +134,10 @@ const ActiveProjectsCard: React.FC<ActiveProjectsCardProps> = ({ projects, onPro
               <div 
                 key={project.id}
                 className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => onProjectClick(project)}
+                onClick={() => {
+                  console.log('Project card clicked:', project);
+                  onProjectClick(project);
+                }}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">

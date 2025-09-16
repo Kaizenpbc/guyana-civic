@@ -314,6 +314,196 @@ CREATE TABLE project_issues (
 );
 
 -- =============================================
+-- PROFESSIONAL PM TOOL MODULE (Enterprise Level)
+-- =============================================
+
+-- Projects table (enhanced with schedule management)
+ALTER TABLE projects 
+ADD COLUMN has_schedule BOOLEAN DEFAULT false,
+ADD COLUMN schedule_created_at TIMESTAMP NULL,
+ADD COLUMN schedule_updated_at TIMESTAMP NULL,
+ADD COLUMN schedule_version INT DEFAULT 1,
+ADD COLUMN assigned_to VARCHAR(50),
+ADD COLUMN assigned_at TIMESTAMP;
+
+-- Update projects table to include new status values
+ALTER TABLE projects 
+MODIFY COLUMN status ENUM('submitted', 'under_review', 'approved', 'assigned', 'initiate', 'planning', 'in_progress', 'on_hold', 'completed', 'cancelled') DEFAULT 'submitted';
+
+-- Project schedules (main schedule container)
+CREATE TABLE project_schedules (
+    id VARCHAR(50) PRIMARY KEY,
+    project_id VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    template_id VARCHAR(100), -- References our smart templates
+    template_name VARCHAR(255), -- Building Construction, Road Construction, etc.
+    selected_phases JSON, -- Store selected phases from template
+    selected_documents JSON, -- Store selected documents from template
+    status ENUM('draft', 'active', 'completed', 'archived') DEFAULT 'draft',
+    version INT DEFAULT 1,
+    is_current BOOLEAN DEFAULT true, -- Only one current version per project
+    
+    -- Schedule metadata
+    total_duration_days INT,
+    total_tasks INT,
+    completed_tasks INT DEFAULT 0,
+    progress_percentage INT DEFAULT 0,
+    
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(50) NOT NULL,
+    
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    INDEX idx_project (project_id),
+    INDEX idx_template (template_id),
+    INDEX idx_status (status),
+    INDEX idx_current (is_current)
+);
+
+-- Schedule phases (Project Initiation, Design & Planning, etc.)
+CREATE TABLE schedule_phases (
+    id VARCHAR(50) PRIMARY KEY,
+    schedule_id VARCHAR(50) NOT NULL,
+    phase_order INT NOT NULL, -- 1, 2, 3, etc.
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    estimated_days INT NOT NULL,
+    actual_days INT NULL,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    status ENUM('not_started', 'in_progress', 'completed', 'on_hold') DEFAULT 'not_started',
+    progress_percentage INT DEFAULT 0,
+    
+    -- Dependencies
+    depends_on_phases JSON, -- Array of phase IDs this phase depends on
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (schedule_id) REFERENCES project_schedules(id) ON DELETE CASCADE,
+    INDEX idx_schedule (schedule_id),
+    INDEX idx_order (phase_order),
+    INDEX idx_status (status)
+);
+
+-- Schedule tasks (main tasks and subtasks)
+CREATE TABLE schedule_tasks (
+    id VARCHAR(50) PRIMARY KEY,
+    schedule_id VARCHAR(50) NOT NULL,
+    phase_id VARCHAR(50) NOT NULL,
+    parent_task_id VARCHAR(50) NULL, -- NULL for main tasks, references another task for subtasks
+    
+    -- Task hierarchy
+    task_order INT NOT NULL, -- Order within phase
+    level INT DEFAULT 1, -- 1 for main tasks, 2+ for subtasks
+    is_subtask BOOLEAN DEFAULT false,
+    
+    -- Task details
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    estimated_hours INT NOT NULL,
+    actual_hours INT NULL,
+    
+    -- Dates
+    planned_start_date DATE NULL,
+    planned_end_date DATE NULL,
+    actual_start_date DATE NULL,
+    actual_end_date DATE NULL,
+    
+    -- Dependencies
+    depends_on_tasks JSON, -- Array of task IDs this task depends on
+    
+    -- Resources and status
+    assigned_to VARCHAR(50) NULL,
+    required_skills JSON, -- Array of required skills
+    deliverables JSON, -- Array of deliverables
+    status ENUM('not_started', 'in_progress', 'completed', 'on_hold', 'cancelled') DEFAULT 'not_started',
+    progress_percentage INT DEFAULT 0,
+    
+    -- PM Checklist data
+    checklist_items JSON, -- Store PM checklist items and completion status
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (schedule_id) REFERENCES project_schedules(id) ON DELETE CASCADE,
+    FOREIGN KEY (phase_id) REFERENCES schedule_phases(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_task_id) REFERENCES schedule_tasks(id) ON DELETE CASCADE,
+    
+    INDEX idx_schedule (schedule_id),
+    INDEX idx_phase (phase_id),
+    INDEX idx_parent (parent_task_id),
+    INDEX idx_order (task_order),
+    INDEX idx_status (status)
+);
+
+-- Schedule templates (our smart templates)
+CREATE TABLE schedule_templates (
+    id VARCHAR(100) PRIMARY KEY, -- building-construction, road-construction, etc.
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(100) NOT NULL, -- infrastructure, education, environment
+    estimated_duration VARCHAR(100), -- "4-8 months"
+    icon VARCHAR(100), -- lucide icon name
+    
+    -- Template configuration
+    phases JSON NOT NULL, -- Array of phase definitions
+    documents JSON NOT NULL, -- Array of required documents
+    
+    -- Metadata
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_category (category),
+    INDEX idx_active (is_active)
+);
+
+-- Schedule change history for audit trails
+CREATE TABLE schedule_history (
+    id VARCHAR(50) PRIMARY KEY,
+    schedule_id VARCHAR(50) NOT NULL,
+    action ENUM('created', 'updated', 'phase_added', 'phase_updated', 'task_added', 'task_updated', 'task_completed', 'deleted') NOT NULL,
+    entity_type ENUM('schedule', 'phase', 'task') NOT NULL,
+    entity_id VARCHAR(50) NULL,
+    
+    -- Change details
+    old_values JSON NULL, -- Previous values
+    new_values JSON NULL, -- New values
+    change_summary TEXT,
+    
+    -- User and timestamp
+    changed_by VARCHAR(50) NOT NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (schedule_id) REFERENCES project_schedules(id) ON DELETE CASCADE,
+    INDEX idx_schedule (schedule_id),
+    INDEX idx_action (action),
+    INDEX idx_changed_by (changed_by),
+    INDEX idx_changed_at (changed_at)
+);
+
+-- PM checklist templates (our smart contextual reminders)
+CREATE TABLE pm_checklist_templates (
+    id VARCHAR(50) PRIMARY KEY,
+    task_type VARCHAR(100) NOT NULL, -- meeting, survey, budget, design, etc.
+    task_keywords JSON, -- Array of keywords to match task names
+    
+    -- Checklist items
+    checklist_items JSON NOT NULL, -- Array of checklist items with priorities
+    
+    -- Metadata
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_task_type (task_type),
+    INDEX idx_active (is_active)
+);
+
+-- =============================================
 -- INSERT SAMPLE DATA
 -- =============================================
 
@@ -398,3 +588,140 @@ INSERT INTO project_citizen_updates (id, project_id, title, content, update_type
 ('update-3', 'proj-2', 'Water System Installation Begins', 'Construction of the new water treatment facility has begun. This will provide clean drinking water to over 15,000 residents in Anna Regina and surrounding areas.', 'milestone', 'admin-1'),
 ('update-4', 'proj-6', 'Highway Construction Update', 'The Georgetown-Linden Highway project is progressing well. Phase 1 (Georgetown to Timehri) is 60% complete with improved road conditions already visible.', 'progress', 'admin-1'),
 ('update-5', 'proj-7', 'Coastal Protection Milestone', 'The first phase of the coastal protection system has been completed in Region 2. This will protect over 50,000 residents from coastal flooding.', 'milestone', 'admin-1');
+
+-- =============================================
+-- INSERT PM TOOL SAMPLE DATA
+-- =============================================
+
+-- Insert PM role user
+INSERT INTO users (id, username, email, password_hash, role) VALUES
+('pm-1', 'pm', 'pm@region2.gov.gy', '$2b$10$example_hash', 'pm');
+
+-- Update projects to include PM assignment and new status
+UPDATE projects SET 
+    assigned_to = 'pm-1', 
+    assigned_at = '2024-01-15 10:00:00',
+    status = 'initiate'
+WHERE id = 'proj-4';
+
+-- Insert schedule templates (our smart templates)
+INSERT INTO schedule_templates (id, name, description, category, estimated_duration, icon, phases, documents) VALUES
+('building-construction', 'Building Construction', 'Complete template for community centers, schools, and public buildings', 'infrastructure', '4-8 months', 'Building', 
+'[
+  {
+    "id": "phase-1",
+    "name": "Project Initiation",
+    "description": "Initial project setup and stakeholder alignment",
+    "estimatedDays": 7,
+    "tasks": [
+      {
+        "id": "t1",
+        "name": "Stakeholder meeting",
+        "description": "Meet with community leaders and officials",
+        "estimatedHours": 6,
+        "subtasks": [
+          {"id": "t1-1", "name": "Schedule meeting", "description": "Coordinate meeting time with all stakeholders", "estimatedHours": 1},
+          {"id": "t1-2", "name": "Prepare agenda", "description": "Create meeting agenda and discussion points", "estimatedHours": 2},
+          {"id": "t1-3", "name": "Send invitations", "description": "Send meeting invitations and materials", "estimatedHours": 1},
+          {"id": "t1-4", "name": "Conduct meeting", "description": "Facilitate stakeholder meeting and discussions", "estimatedHours": 2}
+        ]
+      },
+      {
+        "id": "t2",
+        "name": "Site survey",
+        "description": "Conduct comprehensive site assessment",
+        "estimatedHours": 8,
+        "subtasks": [
+          {"id": "t2-1", "name": "Topographical survey", "description": "Map site contours and features", "estimatedHours": 4},
+          {"id": "t2-2", "name": "Soil testing", "description": "Test soil composition and bearing capacity", "estimatedHours": 2},
+          {"id": "t2-3", "name": "Environmental assessment", "description": "Assess environmental impact and requirements", "estimatedHours": 2}
+        ]
+      },
+      {
+        "id": "t3",
+        "name": "Budget confirmation",
+        "description": "Finalize project budget and funding sources",
+        "estimatedHours": 4
+      }
+    ]
+  },
+  {
+    "id": "phase-2",
+    "name": "Design & Planning",
+    "description": "Architectural design and engineering planning",
+    "estimatedDays": 21,
+    "tasks": [
+      {
+        "id": "t4",
+        "name": "Architectural design",
+        "description": "Create building plans and specifications",
+        "estimatedHours": 40,
+        "subtasks": [
+          {"id": "t4-1", "name": "Conceptual design", "description": "Develop initial building concepts", "estimatedHours": 16},
+          {"id": "t4-2", "name": "Detailed drawings", "description": "Create detailed architectural drawings", "estimatedHours": 20},
+          {"id": "t4-3", "name": "Design review", "description": "Review and approve design with stakeholders", "estimatedHours": 4}
+        ]
+      },
+      {
+        "id": "t5",
+        "name": "Structural engineering",
+        "description": "Design structural systems and load calculations",
+        "estimatedHours": 24
+      },
+      {
+        "id": "t6",
+        "name": "MEP design",
+        "description": "Mechanical, electrical, and plumbing design",
+        "estimatedHours": 20
+      }
+    ]
+  }
+]',
+'[
+  {"name": "Building Permit", "description": "Official building permit from local authorities", "required": true},
+  {"name": "Environmental Clearance", "description": "Environmental impact assessment approval", "required": true},
+  {"name": "Structural Engineering Report", "description": "Certified structural engineering analysis", "required": true},
+  {"name": "Fire Safety Certificate", "description": "Fire department safety approval", "required": true}
+]'
+);
+
+-- Insert PM checklist templates
+INSERT INTO pm_checklist_templates (id, task_type, task_keywords, checklist_items) VALUES
+('meeting-checklist', 'meeting', '["meeting", "stakeholder", "discussion", "conference"]', 
+'[
+  {"id": "1", "text": "Send agenda 24 hours before meeting", "priority": "critical"},
+  {"id": "2", "text": "Test projector/audio equipment", "priority": "critical"},
+  {"id": "3", "text": "Prepare talking points and key messages", "priority": "important"},
+  {"id": "4", "text": "Book meeting room or set up virtual link", "priority": "critical"},
+  {"id": "5", "text": "Send reminder emails to attendees", "priority": "important"},
+  {"id": "6", "text": "Prepare backup plan (recording, alternate host)", "priority": "nice-to-have"}
+]'),
+
+('survey-checklist', 'survey', '["survey", "site", "assessment", "inspection"]',
+'[
+  {"id": "1", "text": "Check weather forecast for survey day", "priority": "critical"},
+  {"id": "2", "text": "Verify equipment is charged and working", "priority": "critical"},
+  {"id": "3", "text": "Confirm site access permissions", "priority": "critical"},
+  {"id": "4", "text": "Review safety protocols and requirements", "priority": "important"},
+  {"id": "5", "text": "Prepare backup equipment and tools", "priority": "important"},
+  {"id": "6", "text": "Notify local authorities if required", "priority": "nice-to-have"}
+]'),
+
+('budget-checklist', 'budget', '["budget", "cost", "financial", "funding"]',
+'[
+  {"id": "1", "text": "Review all funding sources and amounts", "priority": "critical"},
+  {"id": "2", "text": "Verify cost breakdown accuracy", "priority": "critical"},
+  {"id": "3", "text": "Check for any hidden or additional costs", "priority": "important"},
+  {"id": "4", "text": "Prepare budget presentation materials", "priority": "important"},
+  {"id": "5", "text": "Schedule approval meeting with authorities", "priority": "critical"}
+]'),
+
+('design-checklist', 'design', '["design", "architectural", "engineering", "planning"]',
+'[
+  {"id": "1", "text": "Review design requirements and specifications", "priority": "critical"},
+  {"id": "2", "text": "Check compliance with local building codes", "priority": "critical"},
+  {"id": "3", "text": "Verify accessibility requirements (ADA)", "priority": "important"},
+  {"id": "4", "text": "Prepare design presentation materials", "priority": "important"},
+  {"id": "5", "text": "Schedule design review meeting", "priority": "important"}
+]'
+);

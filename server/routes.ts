@@ -9,6 +9,7 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import { registerProjectTrackerRoutes } from "./project-tracker-routes";
+import { registerPMToolRoutes } from "./pm-tool-routes";
 
 // Authentication middleware
 const requireAuth = (req: any, res: any, next: any) => {
@@ -510,6 +511,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register Project Tracker routes
   registerProjectTrackerRoutes(app);
+  
+  // Register PM Tool routes
+  registerPMToolRoutes(app);
 
   const httpServer = createServer(app);
 

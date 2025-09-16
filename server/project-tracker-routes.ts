@@ -245,25 +245,25 @@ export function registerProjectTrackerRoutes(app: Express) {
         {
           id: 'proj-pm-4',
           jurisdictionId: 'region-2',
-          name: 'Suddie Community Center Construction',
-          description: 'Build new community center with meeting rooms, library, and recreational facilities in Suddie',
+          name: 'Anna Regina Sports Complex',
+          description: 'Construction of modern sports complex with football field, basketball court, and community facilities in Anna Regina',
           category: 'infrastructure',
-          priority: 'medium',
+          priority: 'high',
           scope: 'local',
           fundingSource: 'regional',
-          budgetAllocated: 5500000,
+          budgetAllocated: 7500000,
           budgetSpent: 0,
           currency: 'GYD',
-          plannedStartDate: '2024-06-01',
-          plannedEndDate: '2024-12-31',
+          plannedStartDate: '2024-07-01',
+          plannedEndDate: '2025-03-31',
           status: 'initiate', // New status for RDC management assignment to PM
           progressPercentage: 0,
           createdBy: 'admin-1',
           assignedTo: 'user-6', // Patricia Martinez (PM)
-          assignedAt: '2024-05-15T00:00:00Z',
+          assignedAt: '2024-06-20T00:00:00Z',
           isPublic: true,
-          createdAt: '2024-05-10T00:00:00Z',
-          updatedAt: '2024-05-15T00:00:00Z'
+          createdAt: '2024-06-15T00:00:00Z',
+          updatedAt: '2024-06-20T00:00:00Z'
         }
       ];
 
