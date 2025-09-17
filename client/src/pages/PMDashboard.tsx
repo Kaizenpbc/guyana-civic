@@ -39,6 +39,7 @@ import {
 } from '@/api/risk-management-api';
 import RiskManagementForms from '@/components/RiskManagementForms';
 import RAIDDashboard from '@/components/RAIDDashboard';
+import SmartRiskSuggestions from '@/components/SmartRiskSuggestions';
 
 // API function to get current user
 const getCurrentUser = async (): Promise<{ user: any }> => {
@@ -88,6 +89,8 @@ const PMDashboard: React.FC = () => {
   const [selectedProjectForRisk, setSelectedProjectForRisk] = useState<any>(null);
   const [showRAIDDashboard, setShowRAIDDashboard] = useState(false);
   const [selectedProjectForRAID, setSelectedProjectForRAID] = useState<any>(null);
+  const [showSmartRiskSuggestions, setShowSmartRiskSuggestions] = useState(false);
+  const [selectedProjectForSmartSuggestions, setSelectedProjectForSmartSuggestions] = useState<any>(null);
   
   const { data: authData, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
@@ -257,6 +260,44 @@ const PMDashboard: React.FC = () => {
     setSelectedProjectForRisk(selectedProjectForRAID);
     setShowRiskManagement(true);
     // TODO: Set the active tab in RiskManagementForms to the correct type
+  };
+
+  const handleGetAISuggestions = (project: any) => {
+    setSelectedProjectForSmartSuggestions(project);
+    setShowSmartRiskSuggestions(true);
+  };
+
+  const handleSmartSuggestionsClose = () => {
+    setShowSmartRiskSuggestions(false);
+    setSelectedProjectForSmartSuggestions(null);
+  };
+
+  const handleAcceptRiskSuggestion = (suggestion: any) => {
+    // Create a risk from the suggestion
+    const newRisk = {
+      title: suggestion.title,
+      description: suggestion.description,
+      category: suggestion.category,
+      probability: suggestion.probability,
+      impact: suggestion.impact,
+      risk_score: suggestion.risk_score,
+      status: 'identified',
+      mitigation_strategy: suggestion.mitigation_strategy,
+      contingency_plan: suggestion.contingency_plan,
+      owner_id: authData?.user?.id,
+      assigned_to: authData?.user?.id,
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
+    };
+
+    // TODO: Call API to create the risk
+    console.log('Creating risk from suggestion:', newRisk);
+    
+    // Show success message
+    alert(`Risk "${suggestion.title}" has been added to your project!`);
+  };
+
+  const handleRejectRiskSuggestion = (suggestionId: string) => {
+    console.log('Rejected suggestion:', suggestionId);
   };
 
 
@@ -1913,13 +1954,14 @@ const PMDashboard: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% Complete</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link to Risks</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AI Suggestions</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link to Issues</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {projectsLoading ? (
                       <tr>
-                        <td colSpan={11} className="px-6 py-4 text-center">
+                        <td colSpan={12} className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center space-x-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Loading projects...</span>
@@ -1928,7 +1970,7 @@ const PMDashboard: React.FC = () => {
                       </tr>
                     ) : projectsError ? (
                       <tr>
-                        <td colSpan={11} className="px-6 py-4 text-center text-red-500">
+                        <td colSpan={12} className="px-6 py-4 text-center text-red-500">
                           <div className="flex items-center justify-center space-x-2">
                             <AlertCircle className="h-4 w-4" />
                             <span>Failed to load projects</span>
@@ -2012,6 +2054,20 @@ const PMDashboard: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
+                              className="text-purple-600 hover:text-purple-800"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleGetAISuggestions(project);
+                              }}
+                            >
+                              <Lightbulb className="h-4 w-4 mr-1" />
+                              AI Suggestions
+                            </Button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
                               className="text-green-600 hover:text-green-800"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -2026,7 +2082,7 @@ const PMDashboard: React.FC = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={11} className="px-6 py-4 text-center text-muted-foreground">
+                        <td colSpan={12} className="px-6 py-4 text-center text-muted-foreground">
                           <div className="flex flex-col items-center space-y-2">
                             <ClipboardList className="h-8 w-8" />
                             <p>No projects assigned to you yet</p>
@@ -2107,6 +2163,18 @@ const PMDashboard: React.FC = () => {
           projectName={selectedProjectForRAID.name}
           onClose={handleRAIDDashboardClose}
           onAddNew={handleRAIDAddNew}
+        />
+      )}
+
+      {showSmartRiskSuggestions && selectedProjectForSmartSuggestions && (
+        <SmartRiskSuggestions
+          projectId={selectedProjectForSmartSuggestions.id}
+          projectName={selectedProjectForSmartSuggestions.name}
+          projectCategory={selectedProjectForSmartSuggestions.category || 'building_construction'}
+          projectType={selectedProjectForSmartSuggestions.type || 'construction'}
+          onAcceptSuggestion={handleAcceptRiskSuggestion}
+          onRejectSuggestion={handleRejectRiskSuggestion}
+          onClose={handleSmartSuggestionsClose}
         />
       )}
     </div>
