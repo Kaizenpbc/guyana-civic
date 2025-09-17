@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Briefcase, MapPin, LayoutDashboard, Users, CalendarCheck, DollarSign, ClipboardList, TrendingUp, AlertCircle, CheckCircle, Calendar, FileText, ChevronRight, ChevronDown, Plus, Minus, CheckSquare, Square, Lightbulb, AlertTriangle, Save, Loader2, Target, XCircle } from 'lucide-react';
+import { User, Mail, Briefcase, MapPin, LayoutDashboard, Users, CalendarCheck, DollarSign, ClipboardList, TrendingUp, AlertCircle, CheckCircle, Calendar, FileText, ChevronRight, ChevronDown, Plus, Minus, CheckSquare, Square, Lightbulb, AlertTriangle, Save, Loader2, Target, XCircle, BarChart3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import LogoutButton from '@/components/LogoutButton';
 import ProjectTable from '@/components/ProjectTable';
@@ -41,6 +41,7 @@ import RiskManagementForms from '@/components/RiskManagementForms';
 import RAIDDashboard from '@/components/RAIDDashboard';
 import SmartRiskSuggestions from '@/components/SmartRiskSuggestions';
 import SmartIssueEscalation from '@/components/SmartIssueEscalation';
+import SmartDecisionEngine from '@/components/SmartDecisionEngine';
 import NotificationSystem, { type Notification } from '@/components/NotificationSystem';
 
 // API function to get current user
@@ -93,6 +94,8 @@ const PMDashboard: React.FC = () => {
   const [selectedProjectForRAID, setSelectedProjectForRAID] = useState<any>(null);
   const [showSmartIssueEscalation, setShowSmartIssueEscalation] = useState(false);
   const [selectedProjectForEscalation, setSelectedProjectForEscalation] = useState<any>(null);
+  const [showSmartDecisionEngine, setShowSmartDecisionEngine] = useState(false);
+  const [selectedProjectForDecisionEngine, setSelectedProjectForDecisionEngine] = useState<any>(null);
   const [showSmartRiskSuggestions, setShowSmartRiskSuggestions] = useState(false);
   const [selectedProjectForSmartSuggestions, setSelectedProjectForSmartSuggestions] = useState<any>(null);
   
@@ -288,6 +291,21 @@ const PMDashboard: React.FC = () => {
 
   const handleEscalationCreated = (escalation: any) => {
     console.log('New escalation created:', escalation);
+    // Could trigger notifications or other actions here
+  };
+
+  const handleSmartDecisionEngineClick = (project: any) => {
+    setSelectedProjectForDecisionEngine(project);
+    setShowSmartDecisionEngine(true);
+  };
+
+  const handleSmartDecisionEngineClose = () => {
+    setShowSmartDecisionEngine(false);
+    setSelectedProjectForDecisionEngine(null);
+  };
+
+  const handleDecisionRecommendationGenerated = (recommendation: any) => {
+    console.log('New decision recommendation generated:', recommendation);
     // Could trigger notifications or other actions here
   };
 
@@ -1994,6 +2012,7 @@ const PMDashboard: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link to Risks</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AI Suggestions</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue Escalation</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Decision Tracking</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link to Issues</th>
                     </tr>
                   </thead>
@@ -2115,6 +2134,20 @@ const PMDashboard: React.FC = () => {
                             >
                               <TrendingUp className="h-4 w-4 mr-1" />
                               Escalation
+                            </Button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-indigo-600 hover:text-indigo-800"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSmartDecisionEngineClick(project);
+                              }}
+                            >
+                              <BarChart3 className="h-4 w-4 mr-1" />
+                              Decisions
                             </Button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -2253,6 +2286,32 @@ const PMDashboard: React.FC = () => {
               <SmartIssueEscalation
                 projectId={selectedProjectForEscalation.id}
                 onEscalationCreated={handleEscalationCreated}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSmartDecisionEngine && selectedProjectForDecisionEngine && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Smart Decision Engine - {selectedProjectForDecisionEngine.name}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSmartDecisionEngineClose}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <XCircle className="h-5 w-5" />
+                </Button>
+              </div>
+              <SmartDecisionEngine
+                projectId={selectedProjectForDecisionEngine.id}
+                onRecommendationGenerated={handleDecisionRecommendationGenerated}
               />
             </div>
           </div>
