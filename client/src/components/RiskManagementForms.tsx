@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, FileText, Target, X } from 'lucide-react';
+import SmartAutoComplete from './SmartAutoComplete';
 import { 
   ProjectRisk, 
   ProjectIssue, 
@@ -23,18 +24,24 @@ import {
 } from '@/api/risk-management-api';
 
 interface RiskManagementFormsProps {
-  projectId: string;
+  projectId?: string;
+  project?: any;
+  projects?: any[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
 const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({ 
   projectId, 
+  project,
+  projects = [],
   onClose, 
   onSuccess 
 }) => {
   const [activeTab, setActiveTab] = useState<'risk' | 'issue' | 'decision' | 'action'>('risk');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
+  const [selectedProject, setSelectedProject] = useState<any>(project);
 
   // Risk form state
   const [riskForm, setRiskForm] = useState({
@@ -45,7 +52,8 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
     impact: 'medium' as const,
     mitigation_strategy: '',
     contingency_plan: '',
-    due_date: ''
+    due_date: '',
+    owner_id: ''
   });
 
   // Issue form state
@@ -58,7 +66,8 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
     impact_description: '',
     root_cause: '',
     resolution_plan: '',
-    due_date: ''
+    due_date: '',
+    owner_id: ''
   });
 
   // Decision form state
@@ -70,7 +79,8 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
     options_considered: '',
     chosen_option: '',
     rationale: '',
-    implementation_deadline: ''
+    implementation_deadline: '',
+    decision_maker: ''
   });
 
   // Action form state
@@ -84,10 +94,14 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
   const handleRiskSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedProjectId) {
+      alert('Please select a project first.');
+      return;
+    }
     setIsSubmitting(true);
     
     try {
-      await createRisk(projectId, riskForm);
+      await createRisk(selectedProjectId, riskForm);
       onSuccess();
       onClose();
     } catch (error) {
@@ -100,10 +114,14 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
   const handleIssueSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedProjectId) {
+      alert('Please select a project first.');
+      return;
+    }
     setIsSubmitting(true);
     
     try {
-      await createIssue(projectId, issueForm);
+      await createIssue(selectedProjectId, issueForm);
       onSuccess();
       onClose();
     } catch (error) {
@@ -116,10 +134,14 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
   const handleDecisionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedProjectId) {
+      alert('Please select a project first.');
+      return;
+    }
     setIsSubmitting(true);
     
     try {
-      await createDecision(projectId, decisionForm);
+      await createDecision(selectedProjectId, decisionForm);
       onSuccess();
       onClose();
     } catch (error) {
@@ -132,10 +154,14 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
   const handleActionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedProjectId) {
+      alert('Please select a project first.');
+      return;
+    }
     setIsSubmitting(true);
     
     try {
-      await createAction(projectId, actionForm);
+      await createAction(selectedProjectId, actionForm);
       onSuccess();
       onClose();
     } catch (error) {
@@ -185,18 +211,52 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
             })}
           </div>
 
+          {/* Project Selector */}
+          {projects.length > 0 && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <Label htmlFor="project-selector" className="text-sm font-medium text-blue-900">
+                Select Project *
+              </Label>
+              <Select 
+                value={selectedProjectId} 
+                onValueChange={(value) => {
+                  setSelectedProjectId(value);
+                  const project = projects.find(p => p.id === value);
+                  setSelectedProject(project);
+                }}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Choose a project..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name} - {project.status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedProject && (
+                <div className="mt-2 text-sm text-blue-700">
+                  <strong>Selected:</strong> {selectedProject.name} ({selectedProject.category})
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Risk Form */}
           {activeTab === 'risk' && (
             <form onSubmit={handleRiskSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="risk-title">Risk Title *</Label>
-                  <Input
-                    id="risk-title"
+                  <SmartAutoComplete
                     value={riskForm.title}
-                    onChange={(e) => setRiskForm({ ...riskForm, title: e.target.value })}
+                    onChange={(value) => setRiskForm({ ...riskForm, title: value })}
                     placeholder="Enter risk title"
-                    required
+                    fieldType="risk_title"
+                    projectCategory={selectedProject?.category || 'infrastructure'}
+                    className="w-full"
                   />
                 </div>
                 <div>
@@ -221,12 +281,13 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
               <div>
                 <Label htmlFor="risk-description">Description</Label>
-                <Textarea
-                  id="risk-description"
+                <SmartAutoComplete
                   value={riskForm.description}
-                  onChange={(e) => setRiskForm({ ...riskForm, description: e.target.value })}
+                  onChange={(value) => setRiskForm({ ...riskForm, description: value })}
                   placeholder="Describe the risk in detail"
-                  rows={3}
+                  fieldType="description"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 
@@ -306,23 +367,25 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
               <div>
                 <Label htmlFor="risk-mitigation">Mitigation Strategy</Label>
-                <Textarea
-                  id="risk-mitigation"
+                <SmartAutoComplete
                   value={riskForm.mitigation_strategy}
-                  onChange={(e) => setRiskForm({ ...riskForm, mitigation_strategy: e.target.value })}
+                  onChange={(value) => setRiskForm({ ...riskForm, mitigation_strategy: value })}
                   placeholder="Describe how to mitigate this risk"
-                  rows={3}
+                  fieldType="mitigation_strategy"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 
               <div>
                 <Label htmlFor="risk-contingency">Contingency Plan</Label>
-                <Textarea
-                  id="risk-contingency"
+                <SmartAutoComplete
                   value={riskForm.contingency_plan}
-                  onChange={(e) => setRiskForm({ ...riskForm, contingency_plan: e.target.value })}
+                  onChange={(value) => setRiskForm({ ...riskForm, contingency_plan: value })}
                   placeholder="Describe the contingency plan if risk occurs"
-                  rows={3}
+                  fieldType="contingency_plan"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 
@@ -393,12 +456,13 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
               <div>
                 <Label htmlFor="issue-description">Description</Label>
-                <Textarea
-                  id="issue-description"
+                <SmartAutoComplete
                   value={issueForm.description}
-                  onChange={(e) => setIssueForm({ ...issueForm, description: e.target.value })}
+                  onChange={(value) => setIssueForm({ ...issueForm, description: value })}
                   placeholder="Describe the issue in detail"
-                  rows={3}
+                  fieldType="description"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 
@@ -435,12 +499,13 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
               <div>
                 <Label htmlFor="issue-impact">Impact Description</Label>
-                <Textarea
-                  id="issue-impact"
+                <SmartAutoComplete
                   value={issueForm.impact_description}
-                  onChange={(e) => setIssueForm({ ...issueForm, impact_description: e.target.value })}
+                  onChange={(value) => setIssueForm({ ...issueForm, impact_description: value })}
                   placeholder="Describe the impact of this issue"
-                  rows={3}
+                  fieldType="description"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 
@@ -457,12 +522,13 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
               <div>
                 <Label htmlFor="issue-resolution">Resolution Plan</Label>
-                <Textarea
-                  id="issue-resolution"
+                <SmartAutoComplete
                   value={issueForm.resolution_plan}
-                  onChange={(e) => setIssueForm({ ...issueForm, resolution_plan: e.target.value })}
+                  onChange={(value) => setIssueForm({ ...issueForm, resolution_plan: value })}
                   placeholder="Describe the plan to resolve this issue"
-                  rows={3}
+                  fieldType="mitigation_strategy"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 
@@ -532,23 +598,25 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
               <div>
                 <Label htmlFor="decision-description">Description</Label>
-                <Textarea
-                  id="decision-description"
+                <SmartAutoComplete
                   value={decisionForm.description}
-                  onChange={(e) => setDecisionForm({ ...decisionForm, description: e.target.value })}
+                  onChange={(value) => setDecisionForm({ ...decisionForm, description: value })}
                   placeholder="Describe the decision context"
-                  rows={3}
+                  fieldType="description"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 
               <div>
                 <Label htmlFor="decision-criteria">Decision Criteria</Label>
-                <Textarea
-                  id="decision-criteria"
+                <SmartAutoComplete
                   value={decisionForm.decision_criteria}
-                  onChange={(e) => setDecisionForm({ ...decisionForm, decision_criteria: e.target.value })}
+                  onChange={(value) => setDecisionForm({ ...decisionForm, decision_criteria: value })}
                   placeholder="List the criteria used to make this decision"
-                  rows={3}
+                  fieldType="mitigation_strategy"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 
@@ -650,12 +718,13 @@ const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
 
               <div>
                 <Label htmlFor="action-description">Description</Label>
-                <Textarea
-                  id="action-description"
+                <SmartAutoComplete
                   value={actionForm.description}
-                  onChange={(e) => setActionForm({ ...actionForm, description: e.target.value })}
+                  onChange={(value) => setActionForm({ ...actionForm, description: value })}
                   placeholder="Describe the action in detail"
-                  rows={3}
+                  fieldType="description"
+                  projectCategory={selectedProject?.category || 'infrastructure'}
+                  className="w-full"
                 />
               </div>
 

@@ -11,6 +11,7 @@ import session from "express-session";
 import { registerProjectTrackerRoutes } from "./project-tracker-routes";
 import { registerPMToolRoutes } from "./pm-tool-routes";
 import riskManagementRoutes from "./risk-management-routes";
+import notificationRoutes from "./notification-routes";
 
 // Authentication middleware
 const requireAuth = (req: any, res: any, next: any) => {
@@ -518,6 +519,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Risk Management routes
   app.use(riskManagementRoutes);
+  
+  // Register Notification routes
+  app.use(notificationRoutes);
 
   const httpServer = createServer(app);
 
