@@ -29,6 +29,20 @@ const requireStaff = (req: any, res: any, next: any) => {
   next();
 };
 
+const requireRDCManager = (req: any, res: any, next: any) => {
+  if (!req.user || !["rdc_manager", "minister", "admin", "super_admin"].includes(req.user.role)) {
+    return res.status(403).json({ error: "RDC Manager access required" });
+  }
+  next();
+};
+
+const requireMinister = (req: any, res: any, next: any) => {
+  if (!req.user || !["minister", "admin", "super_admin"].includes(req.user.role)) {
+    return res.status(403).json({ error: "Minister access required" });
+  }
+  next();
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication endpoints
@@ -447,13 +461,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Ministerial Dashboard endpoint
-  app.get("/api/ministerial/dashboard", requireAuth, async (req, res) => {
+  // RDC Manager Dashboard endpoint
+  app.get("/api/rdc/dashboard", requireAuth, requireRDCManager, async (req, res) => {
     try {
-      // Check if user has ministerial access (super_admin role)
-      if (req.user.role !== "super_admin") {
-        return res.status(403).json({ error: "Ministerial access required" });
+      // Get user's jurisdiction
+      const userJurisdictionId = req.user.jurisdictionId;
+      if (!userJurisdictionId) {
+        return res.status(400).json({ error: "User not assigned to a jurisdiction" });
       }
+
+      // Get jurisdiction details
+      const jurisdiction = await storage.getJurisdiction(userJurisdictionId);
+      if (!jurisdiction) {
+        return res.status(404).json({ error: "Jurisdiction not found" });
+      }
+
+      // Get all users in this jurisdiction
+      const jurisdictionUsers = await storage.getUsersByJurisdiction(userJurisdictionId);
+      const pms = jurisdictionUsers.filter(user => user.role === 'pm');
+
+      // Get projects for all PMs in this jurisdiction
+      const allProjects = [];
+      for (const pm of pms) {
+        // This would typically come from a more sophisticated query
+        // For now, we'll simulate getting PM-specific projects
+        const pmProjects = Array.from(storage.projects.values())
+          .filter(project => project.jurisdictionId === userJurisdictionId)
+          .slice(0, 4); // Limit to 4 projects per PM for demo
+        allProjects.push(...pmProjects);
+      }
+
+      // Calculate aggregated statistics
+      const totalProjects = allProjects.length;
+      const totalBudget = allProjects.reduce((sum, project) => sum + (project.budgetAllocated || 0), 0);
+      const totalSpent = allProjects.reduce((sum, project) => sum + (project.budgetSpent || 0), 0);
+      const activeProjects = allProjects.filter(project => project.status === 'in_progress').length;
+      const completedProjects = allProjects.filter(project => project.status === 'completed').length;
+
+      // Calculate risk metrics (simplified)
+      const riskScore = Math.round((Math.random() * 2 + 6) * 10) / 10; // 6.0-8.0 range
+      const optimizationPotential = Math.round(totalBudget * 0.15); // 15% optimization potential
+
+      const dashboard = {
+        jurisdiction: jurisdiction,
+        summary: {
+          totalPMs: pms.length,
+          totalProjects,
+          activeProjects,
+          completedProjects,
+          totalBudget,
+          totalSpent,
+          riskScore,
+          optimizationPotential,
+          budgetUtilization: totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0,
+          projectCompletionRate: totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0
+        },
+        pms: pms.map(pm => ({
+          id: pm.id,
+          name: pm.fullName || pm.username,
+          projectCount: Math.floor(Math.random() * 4) + 2, // 2-5 projects per PM
+          totalBudget: Math.floor(Math.random() * 2000000) + 1000000, // $1M-$3M
+          riskScore: Math.round((Math.random() * 2 + 6) * 10) / 10,
+          onTimeDeliveryRate: Math.floor(Math.random() * 20) + 80, // 80-99%
+          costVariance: Math.round((Math.random() * 10 + 2) * 10) / 10 // 2.0-12.0%
+        })),
+        recentActivity: [
+          {
+            id: 'activity-1',
+            type: 'project_completed',
+            title: 'Anna Regina Sports Complex completed',
+            description: 'Infrastructure project delivered on time and within budget',
+            timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            pm: 'Patricia Martinez'
+          },
+          {
+            id: 'activity-2',
+            type: 'risk_escalated',
+            title: 'Weather delay pattern identified',
+            description: 'Coordinated response plan activated across 3 PM portfolios',
+            timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            pm: 'System Alert'
+          },
+          {
+            id: 'activity-3',
+            type: 'optimization_implemented',
+            title: 'Bulk procurement program launched',
+            description: 'Regional material procurement saving $45K across projects',
+            timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            pm: 'Regional Initiative'
+          }
+        ]
+      };
+
+      res.json(dashboard);
+    } catch (error) {
+      console.error("RDC Dashboard error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Ministerial Dashboard endpoint
+  app.get("/api/ministerial/dashboard", requireAuth, requireMinister, async (req, res) => {
+    try {
 
       // Get all jurisdictions (RDCs)
       const jurisdictions = await storage.listJurisdictions();

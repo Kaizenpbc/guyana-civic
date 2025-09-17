@@ -70,6 +70,122 @@ export function registerProjectTrackerRoutes(app: Express) {
 
       // TODO: Implement database query with filters
       // For now, return mock data with cross-RDC support
+
+      // If assignedTo is specified (PM Dashboard), return PM-specific projects
+      if (filters.assignedTo === 'user-6') {
+        const pmProjects: Project[] = [
+          {
+            id: 'proj-pm-1',
+            code: 'RDC2-000001',
+            jurisdictionId: 'region-2',
+            name: 'Essequibo Coast School Renovation',
+            description: 'Complete renovation of primary school facilities in Essequibo Coast',
+            category: 'education',
+            priority: 'high',
+            scope: 'local',
+            fundingSource: 'regional',
+            budgetAllocated: 3200000,
+            budgetSpent: 1280000,
+            currency: 'GYD',
+            plannedStartDate: '2024-03-01',
+            plannedEndDate: '2024-09-30',
+            actualStartDate: '2024-03-05',
+            status: 'in_progress',
+            progressPercentage: 40,
+            createdBy: 'admin-1',
+            assignedTo: 'user-6',
+            assignedAt: '2024-02-20T00:00:00Z',
+            isPublic: true,
+            createdAt: '2024-02-15T00:00:00Z',
+            updatedAt: '2024-03-05T00:00:00Z'
+          },
+          {
+            id: 'proj-pm-2',
+            code: 'RDC2-000002',
+            jurisdictionId: 'region-2',
+            name: 'Pomeroon Health Center Upgrade',
+            description: 'Upgrade medical facilities and equipment at Pomeroon Health Center',
+            category: 'health',
+            priority: 'urgent',
+            scope: 'local',
+            fundingSource: 'national',
+            budgetAllocated: 4500000,
+            budgetSpent: 0,
+            currency: 'GYD',
+            plannedStartDate: '2024-04-01',
+            plannedEndDate: '2024-12-31',
+            status: 'planning',
+            progressPercentage: 5,
+            createdBy: 'admin-1',
+            assignedTo: 'user-6',
+            assignedAt: '2024-03-01T00:00:00Z',
+            isPublic: true,
+            createdAt: '2024-02-28T00:00:00Z',
+            updatedAt: '2024-03-01T00:00:00Z'
+          },
+          {
+            id: 'proj-pm-3',
+            code: 'RDC2-000003',
+            jurisdictionId: 'region-2',
+            name: 'Charity Market Infrastructure',
+            description: 'Build new market stalls and improve drainage at Charity Market',
+            category: 'infrastructure',
+            priority: 'medium',
+            scope: 'local',
+            fundingSource: 'local',
+            budgetAllocated: 1800000,
+            budgetSpent: 1440000,
+            currency: 'GYD',
+            plannedStartDate: '2024-01-15',
+            plannedEndDate: '2024-05-15',
+            actualStartDate: '2024-01-20',
+            actualEndDate: '2024-05-10',
+            status: 'completed',
+            progressPercentage: 100,
+            createdBy: 'admin-1',
+            assignedTo: 'user-6',
+            assignedAt: '2024-01-10T00:00:00Z',
+            isPublic: true,
+            createdAt: '2024-01-05T00:00:00Z',
+            updatedAt: '2024-05-10T00:00:00Z'
+          },
+          {
+            id: 'proj-pm-4',
+            code: 'RDC2-000004',
+            jurisdictionId: 'region-2',
+            name: 'Anna Regina Sports Complex',
+            description: 'Construction of modern sports complex with football field, basketball court, and community facilities in Anna Regina',
+            category: 'infrastructure',
+            priority: 'high',
+            scope: 'local',
+            fundingSource: 'regional',
+            budgetAllocated: 5500000,
+            budgetSpent: 1100000,
+            currency: 'GYD',
+            plannedStartDate: '2024-02-01',
+            plannedEndDate: '2024-11-30',
+            actualStartDate: '2024-02-15',
+            status: 'in_progress',
+            progressPercentage: 20,
+            createdBy: 'admin-1',
+            assignedTo: 'user-6',
+            assignedAt: '2024-01-25T00:00:00Z',
+            isPublic: true,
+            createdAt: '2024-01-20T00:00:00Z',
+            updatedAt: '2024-02-15T00:00:00Z'
+          }
+        ];
+
+        return res.json({
+          projects: pmProjects,
+          total: pmProjects.length,
+          page: 1,
+          limit: pmProjects.length,
+          totalPages: 1
+        });
+      }
+
+      // For general requests, return mock data with cross-RDC support
       const mockProjects: Project[] = [
         {
           id: 'proj-1',
@@ -172,6 +288,7 @@ export function registerProjectTrackerRoutes(app: Express) {
         // Projects assigned to PM (user-6: Patricia Martinez)
         {
           id: 'proj-pm-1',
+          code: 'RDC2-000001',
           jurisdictionId: 'region-2',
           name: 'Essequibo Coast School Renovation',
           description: 'Complete renovation of primary school facilities in Essequibo Coast',
@@ -196,6 +313,7 @@ export function registerProjectTrackerRoutes(app: Express) {
         },
         {
           id: 'proj-pm-2',
+          code: 'RDC2-000002',
           jurisdictionId: 'region-2',
           name: 'Pomeroon Health Center Upgrade',
           description: 'Upgrade medical facilities and equipment at Pomeroon Health Center',
@@ -219,6 +337,7 @@ export function registerProjectTrackerRoutes(app: Express) {
         },
         {
           id: 'proj-pm-3',
+          code: 'RDC2-000003',
           jurisdictionId: 'region-2',
           name: 'Charity Market Infrastructure',
           description: 'Build new market stalls and improve drainage at Charity Market',
@@ -244,6 +363,7 @@ export function registerProjectTrackerRoutes(app: Express) {
         },
         {
           id: 'proj-pm-4',
+          code: 'RDC2-000004',
           jurisdictionId: 'region-2',
           name: 'Anna Regina Sports Complex',
           description: 'Construction of modern sports complex with football field, basketball court, and community facilities in Anna Regina',

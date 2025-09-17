@@ -3,6 +3,7 @@
 
 export interface Project {
   id: string;
+  code?: string; // Project code (e.g., RDC1-000001)
   jurisdictionId: string; // Primary jurisdiction (for backward compatibility)
   name: string;
   description: string;

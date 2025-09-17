@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Briefcase, MapPin, LayoutDashboard, Users, CalendarCheck, DollarSign, ClipboardList, TrendingUp, AlertCircle, CheckCircle, Calendar, FileText, ChevronRight, ChevronDown, Plus, Minus, CheckSquare, Square, Lightbulb, AlertTriangle, Save, Loader2, Target, XCircle, BarChart3 } from 'lucide-react';
+import { User, Mail, Briefcase, MapPin, LayoutDashboard, Users, CalendarCheck, DollarSign, ClipboardList, TrendingUp, AlertCircle, CheckCircle, Calendar, FileText, ChevronRight, ChevronDown, Plus, Minus, CheckSquare, Square, Lightbulb, AlertTriangle, Save, Loader2, Target, XCircle, BarChart3, Brain } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import LogoutButton from '@/components/LogoutButton';
 import ProjectTable from '@/components/ProjectTable';
@@ -45,6 +45,7 @@ import SmartDecisionEngine from '@/components/SmartDecisionEngine';
 import SmartActionPrioritization from '@/components/SmartActionPrioritization';
 import CrossProjectRiskAnalysis from '@/components/CrossProjectRiskAnalysis';
 import NotificationSystem, { type Notification } from '@/components/NotificationSystem';
+import AdvancedAnalytics from '@/components/AdvancedAnalytics';
 
 // API function to get current user
 const getCurrentUser = async (): Promise<{ user: any }> => {
@@ -103,6 +104,7 @@ const PMDashboard: React.FC = () => {
   const [selectedProjectForDecisionEngine, setSelectedProjectForDecisionEngine] = useState<any>(null);
   const [showSmartRiskSuggestions, setShowSmartRiskSuggestions] = useState(false);
   const [selectedProjectForSmartSuggestions, setSelectedProjectForSmartSuggestions] = useState<any>(null);
+  const [showAdvancedAnalytics, setShowAdvancedAnalytics] = useState(false);
   
   const { data: authData, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
@@ -111,6 +113,19 @@ const PMDashboard: React.FC = () => {
   });
 
   const user = authData?.user || { id: 'user-6', fullName: 'Project Manager', role: 'pm', email: 'pm@city.gov', username: 'PM' }; // Fallback for testing
+
+  // Role-based access control
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation('/login');
+      return;
+    }
+
+    if (!isLoading && user && !['pm', 'admin', 'super_admin'].includes(user.role)) {
+      setLocation('/unauthorized');
+      return;
+    }
+  }, [user, isLoading, setLocation]);
 
   // Fetch PM's assigned projects - moved before conditional returns
   const { data: projectsData, isLoading: projectsLoading, error: projectsError } = useQuery({
@@ -1987,6 +2002,14 @@ const PMDashboard: React.FC = () => {
               <BarChart3 className="h-4 w-4 mr-2" />
               🔍 Portfolio Analysis
             </Button>
+            <Button
+              onClick={() => setShowAdvancedAnalytics(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+              size="sm"
+            >
+              <Brain className="h-4 w-4 mr-2" />
+              📊 Advanced Analytics
+            </Button>
             <NotificationSystem 
               userId={user.id}
               onNotificationClick={(notification) => {
@@ -2028,10 +2051,11 @@ const PMDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="min-w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Name</th>
+                      <th className="sticky left-0 z-10 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-r border-gray-200 min-w-[120px]">Project Code</th>
+                      <th className="sticky left-[120px] z-10 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-r border-gray-200 min-w-[200px]">Project Name</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Start</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Finish</th>
@@ -2051,7 +2075,7 @@ const PMDashboard: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {projectsLoading ? (
                       <tr>
-                        <td colSpan={15} className="px-6 py-4 text-center">
+                        <td colSpan={16} className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center space-x-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Loading projects...</span>
@@ -2060,7 +2084,7 @@ const PMDashboard: React.FC = () => {
                       </tr>
                     ) : projectsError ? (
                       <tr>
-                        <td colSpan={15} className="px-6 py-4 text-center text-red-500">
+                        <td colSpan={16} className="px-6 py-4 text-center text-red-500">
                           <div className="flex items-center justify-center space-x-2">
                             <AlertCircle className="h-4 w-4" />
                             <span>Failed to load projects</span>
@@ -2076,9 +2100,12 @@ const PMDashboard: React.FC = () => {
                           className="hover:bg-gray-50 cursor-pointer transition-colors"
                           onClick={() => handleProjectClick(project)}
                         >
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="sticky left-0 z-10 px-6 py-4 whitespace-nowrap bg-white border-r border-gray-200 min-w-[120px]">
+                            <div className="text-sm font-medium text-blue-600">{project.code || 'No Code'}</div>
+                            <div className="text-xs text-gray-500">ID: {project.id}</div>
+                          </td>
+                          <td className="sticky left-[120px] z-10 px-6 py-4 whitespace-nowrap bg-white border-r border-gray-200 min-w-[200px]">
                             <div className="text-sm font-medium text-gray-900">{project.name}</div>
-                            <div className="text-sm text-gray-500">ID: {project.id}</div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-sm text-gray-900 max-w-xs truncate">{project.description}</div>
@@ -2218,7 +2245,7 @@ const PMDashboard: React.FC = () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={15} className="px-6 py-4 text-center text-muted-foreground">
+                        <td colSpan={16} className="px-6 py-4 text-center text-muted-foreground">
                           <div className="flex flex-col items-center space-y-2">
                             <ClipboardList className="h-8 w-8" />
                             <p>No projects assigned to you yet</p>
@@ -2377,10 +2404,17 @@ const PMDashboard: React.FC = () => {
       )}
 
       {showCrossProjectAnalysis && (
-        <CrossProjectRiskAnalysis 
+        <CrossProjectRiskAnalysis
           userId={user.id}
           projects={projectsData?.projects || []}
           onClose={handleCrossProjectAnalysisClose}
+        />
+      )}
+
+      {showAdvancedAnalytics && (
+        <AdvancedAnalytics
+          projects={projectsData?.projects || []}
+          onClose={() => setShowAdvancedAnalytics(false)}
         />
       )}
     </div>

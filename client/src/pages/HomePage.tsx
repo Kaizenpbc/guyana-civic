@@ -1,4 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from 'wouter';
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building, Search, AlertCircle, Users } from "lucide-react";
@@ -35,6 +37,7 @@ const getCurrentUser = async (): Promise<{ user: any }> => {
 
 export default function HomePage() {
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   // Check authentication
   const { data: authData, isLoading: authLoading } = useQuery({
@@ -42,6 +45,37 @@ export default function HomePage() {
     queryFn: getCurrentUser,
     retry: false,
   });
+
+  // Role-based routing
+  useEffect(() => {
+    if (!authLoading && authData?.user) {
+      const user = authData.user;
+      const role = user.role;
+
+      // Redirect based on role
+      switch (role) {
+        case 'pm':
+          navigate('/pm/dashboard');
+          break;
+        case 'rdc_manager':
+          navigate('/rdc/dashboard');
+          break;
+        case 'minister':
+          navigate('/ministerial/dashboard');
+          break;
+        case 'admin':
+        case 'super_admin':
+          navigate('/admin/dashboard');
+          break;
+        case 'staff':
+          navigate('/staff/dashboard');
+          break;
+        default:
+          // Stay on home page for citizens and other roles
+          break;
+      }
+    }
+  }, [authData, authLoading, navigate]);
 
   // Fetch jurisdictions from API
   const { data: jurisdictions = [], isLoading: jurisdictionsLoading, error: jurisdictionsError } = useQuery({

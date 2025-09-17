@@ -14,6 +14,7 @@ import {
 
 interface Project {
   id: string;
+  code?: string;
   name: string;
   description: string;
   status: 'planning' | 'approved' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
@@ -113,11 +114,12 @@ const ProjectTable: React.FC<ProjectTableProps> = ({ projects }) => {
     <div className="space-y-4">
       {/* Desktop Table View */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full border-collapse">
+        <table className="min-w-full border-collapse">
           <thead>
             <tr className="border-b">
               <th className="text-left p-3 font-medium text-sm text-muted-foreground">#</th>
-              <th className="text-left p-3 font-medium text-sm text-muted-foreground">Project</th>
+              <th className="sticky left-0 z-10 text-left p-3 font-medium text-sm text-muted-foreground bg-background border-r min-w-[120px]">Code</th>
+              <th className="sticky left-[120px] z-10 text-left p-3 font-medium text-sm text-muted-foreground bg-background border-r min-w-[200px]">Project</th>
               <th className="text-left p-3 font-medium text-sm text-muted-foreground">Planned Start</th>
               <th className="text-left p-3 font-medium text-sm text-muted-foreground">Planned Finish</th>
               <th className="text-left p-3 font-medium text-sm text-muted-foreground">Status</th>
@@ -131,7 +133,11 @@ const ProjectTable: React.FC<ProjectTableProps> = ({ projects }) => {
               return (
                 <tr key={project.id} className="border-b hover:bg-muted/50">
                   <td className="p-3 text-sm text-muted-foreground">{index + 1}</td>
-                  <td className="p-3">
+                  <td className="sticky left-0 z-10 p-3 bg-background border-r min-w-[120px]">
+                    <div className="font-medium text-blue-600">{project.code || 'No Code'}</div>
+                    <div className="text-xs text-muted-foreground">ID: {project.id}</div>
+                  </td>
+                  <td className="sticky left-[120px] z-10 p-3 bg-background border-r min-w-[200px]">
                     <div className="font-medium">{project.name}</div>
                     <div className="text-sm text-muted-foreground">{project.category}</div>
                   </td>
@@ -240,6 +246,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({ projects }) => {
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="font-medium">{project.name}</h3>
+                    <p className="text-sm text-blue-600 font-medium">{project.code || 'No Code'}</p>
                     <p className="text-sm text-muted-foreground">{project.category}</p>
                   </div>
                   <Dialog>

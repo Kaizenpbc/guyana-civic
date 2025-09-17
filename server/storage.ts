@@ -163,6 +163,7 @@ export class MemStorage implements IStorage {
     const jurisdictions: Jurisdiction[] = [
       {
         id: "region-1",
+        identifier: "RDC1",
         name: "Barima-Waini (Region 1)",
         description: "Northernmost region managing Mabaruma and surrounding areas, focusing on agriculture, mining, and border services.",
         contactEmail: "info@region1.gov.gy",
@@ -172,6 +173,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-2",
+        identifier: "RDC2",
         name: "Pomeroon-Supenaam (Region 2)",
         description: "Coastal region managing Anna Regina and surrounding areas, specializing in rice farming and coastal development.",
         contactEmail: "info@region2.gov.gy",
@@ -181,6 +183,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-3",
+        identifier: "RDC3",
         name: "Essequibo Islands-West Demerara (Region 3)",
         description: "Strategic region managing Vreed-en-Hoop and Essequibo Islands, focusing on transportation and industrial development.",
         contactEmail: "info@region3.gov.gy",
@@ -190,6 +193,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-4",
+        identifier: "RDC4",
         name: "Demerara-Mahaica (Region 4)",
         description: "Capital region managing Georgetown and surrounding areas, providing central government services and urban development.",
         contactEmail: "info@region4.gov.gy",
@@ -199,6 +203,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-5",
+        identifier: "RDC5",
         name: "Mahaica-Berbice (Region 5)",
         description: "Agricultural region managing Fort Wellington and surrounding areas, specializing in sugar production and rural development.",
         contactEmail: "info@region5.gov.gy",
@@ -208,6 +213,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-6",
+        identifier: "RDC6",
         name: "East Berbice-Corentyne (Region 6)",
         description: "Eastern region managing New Amsterdam and surrounding areas, focusing on agriculture, education, and border services.",
         contactEmail: "info@region6.gov.gy",
@@ -217,6 +223,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-7",
+        identifier: "RDC7",
         name: "Cuyuni-Mazaruni (Region 7)",
         description: "Mining region managing Bartica and surrounding areas, specializing in gold mining, forestry, and eco-tourism.",
         contactEmail: "info@region7.gov.gy",
@@ -226,6 +233,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-8",
+        identifier: "RDC8",
         name: "Potaro-Siparuni (Region 8)",
         description: "Interior region managing Mahdia and surrounding areas, focusing on mining, forestry, and indigenous community development.",
         contactEmail: "info@region8.gov.gy",
@@ -235,6 +243,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-9",
+        identifier: "RDC9",
         name: "Upper Takutu-Upper Essequibo (Region 9)",
         description: "Southern region managing Lethem and surrounding areas, specializing in ranching, agriculture, and border trade.",
         contactEmail: "info@region9.gov.gy",
@@ -244,6 +253,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: "region-10",
+        identifier: "RDC10",
         name: "Upper Demerara-Berbice (Region 10)",
         description: "Industrial region managing Linden and surrounding areas, focusing on bauxite mining, manufacturing, and urban development.",
         contactEmail: "info@region10.gov.gy",
@@ -253,6 +263,9 @@ export class MemStorage implements IStorage {
       }
     ];
     jurisdictions.forEach(jurisdiction => this.jurisdictions.set(jurisdiction.id, jurisdiction));
+
+    // Migrate any existing jurisdictions to have identifiers
+    this.migrateJurisdictionsWithIdentifiers();
 
     // Create sample issues
     const issues: Issue[] = [
@@ -1038,9 +1051,17 @@ export class MemStorage implements IStorage {
   async createProject(insertProject: InsertProject): Promise<Project> {
     const id = randomUUID();
     const now = new Date();
+
+    // Generate project code if not provided
+    let projectCode = insertProject.code;
+    if (!projectCode) {
+      projectCode = await this.generateProjectCode(insertProject.jurisdictionId);
+    }
+
     const project: Project = {
       ...insertProject,
       id,
+      code: projectCode,
       billable: insertProject.billable ?? false,
       active: insertProject.active ?? true,
       createdAt: now,
@@ -1050,10 +1071,70 @@ export class MemStorage implements IStorage {
     return project;
   }
 
+  async generateProjectCode(jurisdictionId: string): Promise<string> {
+    // Get jurisdiction details
+    const jurisdiction = await this.getJurisdiction(jurisdictionId);
+    if (!jurisdiction) {
+      throw new Error(`Jurisdiction ${jurisdictionId} not found`);
+    }
+
+    // Use the jurisdiction identifier (e.g., "RDC1", "RDC2") or extract from name if not set
+    let rdcIdentifier = jurisdiction.identifier;
+    if (!rdcIdentifier) {
+      // Fallback to parsing from name - should not happen in production
+      if (jurisdiction.name.includes("Georgetown")) {
+        rdcIdentifier = "RDC1";
+      } else if (jurisdiction.name.includes("Region")) {
+        const match = jurisdiction.name.match(/Region\s*(\d+)/i);
+        if (match) {
+          rdcIdentifier = `RDC${match[1]}`;
+        } else {
+          rdcIdentifier = "RDC1"; // Default
+        }
+      } else {
+        rdcIdentifier = "RDC1"; // Default
+      }
+    }
+
+    // Count existing projects in this jurisdiction to get next sequential number
+    const jurisdictionProjects = Array.from(this.projects.values())
+      .filter(p => p.jurisdictionId === jurisdictionId);
+
+    const nextNumber = jurisdictionProjects.length + 1;
+
+    // Format as {rdcIdentifier}-{sequentialNumber}
+    return `${rdcIdentifier}-${nextNumber.toString().padStart(6, '0')}`;
+  }
+
+  // Migration helper: Update existing jurisdictions with identifiers
+  async migrateJurisdictionsWithIdentifiers() {
+    for (const [id, jurisdiction] of this.jurisdictions.entries()) {
+      if (!jurisdiction.identifier) {
+        let identifier = "RDC1"; // Default
+
+        if (jurisdiction.name.includes("Georgetown")) {
+          identifier = "RDC1";
+        } else if (jurisdiction.name.includes("Region")) {
+          const match = jurisdiction.name.match(/Region\s*(\d+)/i);
+          if (match) {
+            identifier = `RDC${match[1]}`;
+          }
+        }
+
+        // Update the jurisdiction with the identifier
+        const updatedJurisdiction = {
+          ...jurisdiction,
+          identifier
+        };
+        this.jurisdictions.set(id, updatedJurisdiction);
+      }
+    }
+  }
+
   async updateProject(id: string, updates: Partial<Project>): Promise<Project | undefined> {
     const existing = this.projects.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, ...updates, updatedAt: new Date() };
     this.projects.set(id, updated);
     return updated;

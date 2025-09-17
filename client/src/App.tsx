@@ -14,7 +14,9 @@ import EmployeeDirectory from "@/pages/EmployeeDirectory";
 import LoginPage from "@/pages/LoginPage";
 import StaffDashboard from "@/pages/StaffDashboard";
 import PMDashboard from "@/pages/PMDashboard";
+import RDCDashboard from "@/pages/RDCDashboard";
 import MinisterialDashboard from "@/pages/MinisterialDashboard";
+import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
 
 function Router() {
@@ -28,8 +30,10 @@ function Router() {
       <Route path="/staff/dashboard" component={StaffDashboard} />
       <Route path="/staff/directory" component={EmployeeDirectory} />
       <Route path="/pm/dashboard" component={PMDashboard} />
+      <Route path="/rdc/dashboard" component={RDCDashboard} />
       <Route path="/admin/dashboard" component={StaffDashboard} />
       <Route path="/ministerial/dashboard" component={MinisterialDashboard} />
+      <Route path="/unauthorized" component={Unauthorized} />
       <Route component={NotFound} />
     </Switch>
   );
