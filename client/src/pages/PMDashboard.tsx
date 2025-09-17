@@ -42,6 +42,8 @@ import RAIDDashboard from '@/components/RAIDDashboard';
 import SmartRiskSuggestions from '@/components/SmartRiskSuggestions';
 import SmartIssueEscalation from '@/components/SmartIssueEscalation';
 import SmartDecisionEngine from '@/components/SmartDecisionEngine';
+import SmartActionPrioritization from '@/components/SmartActionPrioritization';
+import CrossProjectRiskAnalysis from '@/components/CrossProjectRiskAnalysis';
 import NotificationSystem, { type Notification } from '@/components/NotificationSystem';
 
 // API function to get current user
@@ -94,6 +96,9 @@ const PMDashboard: React.FC = () => {
   const [selectedProjectForRAID, setSelectedProjectForRAID] = useState<any>(null);
   const [showSmartIssueEscalation, setShowSmartIssueEscalation] = useState(false);
   const [selectedProjectForEscalation, setSelectedProjectForEscalation] = useState<any>(null);
+  const [showSmartActionPrioritization, setShowSmartActionPrioritization] = useState(false);
+  const [selectedProjectForPrioritization, setSelectedProjectForPrioritization] = useState<any>(null);
+  const [showCrossProjectAnalysis, setShowCrossProjectAnalysis] = useState(false);
   const [showSmartDecisionEngine, setShowSmartDecisionEngine] = useState(false);
   const [selectedProjectForDecisionEngine, setSelectedProjectForDecisionEngine] = useState<any>(null);
   const [showSmartRiskSuggestions, setShowSmartRiskSuggestions] = useState(false);
@@ -292,6 +297,24 @@ const PMDashboard: React.FC = () => {
   const handleEscalationCreated = (escalation: any) => {
     console.log('New escalation created:', escalation);
     // Could trigger notifications or other actions here
+  };
+
+  const handleSmartActionPrioritizationClick = (project: any) => {
+    setSelectedProjectForPrioritization(project);
+    setShowSmartActionPrioritization(true);
+  };
+
+  const handleSmartActionPrioritizationClose = () => {
+    setShowSmartActionPrioritization(false);
+    setSelectedProjectForPrioritization(null);
+  };
+
+  const handleCrossProjectAnalysisClick = () => {
+    setShowCrossProjectAnalysis(true);
+  };
+
+  const handleCrossProjectAnalysisClose = () => {
+    setShowCrossProjectAnalysis(false);
   };
 
   const handleSmartDecisionEngineClick = (project: any) => {
@@ -1956,6 +1979,14 @@ const PMDashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center space-x-4">
+            <Button
+              onClick={handleCrossProjectAnalysisClick}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              size="sm"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              🔍 Portfolio Analysis
+            </Button>
             <NotificationSystem 
               userId={user.id}
               onNotificationClick={(notification) => {
@@ -2013,13 +2044,14 @@ const PMDashboard: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AI Suggestions</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue Escalation</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Decision Tracking</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action Priority</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link to Issues</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {projectsLoading ? (
                       <tr>
-                        <td colSpan={12} className="px-6 py-4 text-center">
+                        <td colSpan={15} className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center space-x-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Loading projects...</span>
@@ -2028,7 +2060,7 @@ const PMDashboard: React.FC = () => {
                       </tr>
                     ) : projectsError ? (
                       <tr>
-                        <td colSpan={12} className="px-6 py-4 text-center text-red-500">
+                        <td colSpan={15} className="px-6 py-4 text-center text-red-500">
                           <div className="flex items-center justify-center space-x-2">
                             <AlertCircle className="h-4 w-4" />
                             <span>Failed to load projects</span>
@@ -2036,7 +2068,9 @@ const PMDashboard: React.FC = () => {
                         </td>
                       </tr>
                     ) : projectsData?.projects && projectsData.projects.length > 0 ? (
-                      projectsData.projects.map((project: any) => (
+                      projectsData.projects.map((project: any) => {
+                        console.log('Rendering project:', project.name, 'with', projectsData.projects.length, 'total projects');
+                        return (
                         <tr 
                           key={project.id} 
                           className="hover:bg-gray-50 cursor-pointer transition-colors"
@@ -2152,6 +2186,21 @@ const PMDashboard: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <Button 
+                              variant="default" 
+                              size="sm" 
+                              className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('AI Priority button clicked for project:', project.name);
+                                handleSmartActionPrioritizationClick(project);
+                              }}
+                            >
+                              <Target className="h-4 w-4 mr-1" />
+                              🧠 AI Priority
+                            </Button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <Button 
                               variant="ghost" 
                               size="sm" 
                               className="text-green-600 hover:text-green-800"
@@ -2165,10 +2214,11 @@ const PMDashboard: React.FC = () => {
                             </Button>
                           </td>
                         </tr>
-                      ))
+                        )
+                      })
                     ) : (
                       <tr>
-                        <td colSpan={12} className="px-6 py-4 text-center text-muted-foreground">
+                        <td colSpan={15} className="px-6 py-4 text-center text-muted-foreground">
                           <div className="flex flex-col items-center space-y-2">
                             <ClipboardList className="h-8 w-8" />
                             <p>No projects assigned to you yet</p>
@@ -2316,6 +2366,22 @@ const PMDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showSmartActionPrioritization && selectedProjectForPrioritization && (
+        <SmartActionPrioritization 
+          projectId={selectedProjectForPrioritization.id}
+          project={selectedProjectForPrioritization}
+          onClose={handleSmartActionPrioritizationClose}
+        />
+      )}
+
+      {showCrossProjectAnalysis && (
+        <CrossProjectRiskAnalysis 
+          userId={user.id}
+          projects={projectsData?.projects || []}
+          onClose={handleCrossProjectAnalysisClose}
+        />
       )}
     </div>
   );
