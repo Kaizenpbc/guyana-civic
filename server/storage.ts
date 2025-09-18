@@ -407,6 +407,28 @@ export class MemStorage implements IStorage {
         jurisdictionId: "region-2",
         isActive: true,
         createdAt: new Date()
+      },
+      {
+        id: "user-7",
+        username: "rdc_manager",
+        email: "rdc@region2.gov.gy",
+        fullName: "RDC Senior Manager",
+        phone: "+592 777-5678",
+        role: "rdc_manager",
+        jurisdictionId: "region-2",
+        isActive: true,
+        createdAt: new Date()
+      },
+      {
+        id: "user-8",
+        username: "minister",
+        email: "minister@gov.gy",
+        fullName: "Minister of Public Works",
+        phone: "+592 226-1234",
+        role: "minister",
+        jurisdictionId: null,
+        isActive: true,
+        createdAt: new Date()
       }
     ];
 

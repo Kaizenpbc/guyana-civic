@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Briefcase, MapPin, LayoutDashboard, Users, CalendarCheck, DollarSign, ClipboardList, TrendingUp, AlertCircle, CheckCircle, Calendar, FileText, ChevronRight, ChevronDown, Plus, Minus, CheckSquare, Square, Lightbulb, AlertTriangle, Save, Loader2, Target, XCircle, BarChart3, Brain } from 'lucide-react';
+import { User, Mail, Briefcase, MapPin, LayoutDashboard, Users, CalendarCheck, DollarSign, ClipboardList, TrendingUp, AlertCircle, CheckCircle, Calendar, FileText, ChevronRight, ChevronDown, Plus, Minus, CheckSquare, Square, Lightbulb, AlertTriangle, Save, Loader2, Target, XCircle, BarChart3, Brain, Clock, Bell, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import LogoutButton from '@/components/LogoutButton';
 import ProjectTable from '@/components/ProjectTable';
@@ -46,6 +46,14 @@ import SmartActionPrioritization from '@/components/SmartActionPrioritization';
 import CrossProjectRiskAnalysis from '@/components/CrossProjectRiskAnalysis';
 import NotificationSystem, { type Notification } from '@/components/NotificationSystem';
 import AdvancedAnalytics from '@/components/AdvancedAnalytics';
+import ProjectHealthScoreCard from '@/components/ProjectHealthScoreCard';
+import SmartResourceAllocation from '@/components/SmartResourceAllocation';
+import RiskTrendAnalysis from '@/components/RiskTrendAnalysis';
+import DeadlineReminders from '@/components/DeadlineReminders';
+import EscalationRules from '@/components/EscalationRules';
+import ApprovalWorkflows from '@/components/ApprovalWorkflows';
+import SmartNotifications from '@/components/SmartNotifications';
+import AITaskAssignment from '@/components/AITaskAssignment';
 
 // API function to get current user
 const getCurrentUser = async (): Promise<{ user: any }> => {
@@ -105,6 +113,18 @@ const PMDashboard: React.FC = () => {
   const [showSmartRiskSuggestions, setShowSmartRiskSuggestions] = useState(false);
   const [selectedProjectForSmartSuggestions, setSelectedProjectForSmartSuggestions] = useState<any>(null);
   const [showAdvancedAnalytics, setShowAdvancedAnalytics] = useState(false);
+  const [showProjectHealthScore, setShowProjectHealthScore] = useState(false);
+  const [selectedProjectForHealth, setSelectedProjectForHealth] = useState<any>(null);
+  const [showSmartResourceAllocation, setShowSmartResourceAllocation] = useState(false);
+  const [selectedProjectForResourceAllocation, setSelectedProjectForResourceAllocation] = useState<any>(null);
+  const [showRiskTrendAnalysis, setShowRiskTrendAnalysis] = useState(false);
+  const [selectedProjectForRiskTrends, setSelectedProjectForRiskTrends] = useState<any>(null);
+  const [showDeadlineReminders, setShowDeadlineReminders] = useState(false);
+  const [selectedProjectForDeadlines, setSelectedProjectForDeadlines] = useState<any>(null);
+  const [showEscalationRules, setShowEscalationRules] = useState(false);
+  const [showApprovalWorkflows, setShowApprovalWorkflows] = useState(false);
+  const [showSmartNotifications, setShowSmartNotifications] = useState(false);
+  const [showAITaskAssignment, setShowAITaskAssignment] = useState(false);
   
   const { data: authData, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
@@ -2010,6 +2030,85 @@ const PMDashboard: React.FC = () => {
               <Brain className="h-4 w-4 mr-2" />
               📊 Advanced Analytics
             </Button>
+            <Button
+              onClick={() => {
+                setShowProjectHealthScore(true);
+                setSelectedProjectForHealth(projectsData?.projects?.[0] || null);
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              size="sm"
+            >
+              <Target className="h-4 w-4 mr-2" />
+              🏥 Project Health
+            </Button>
+            <Button
+              onClick={() => {
+                setShowSmartResourceAllocation(true);
+                setSelectedProjectForResourceAllocation(projectsData?.projects?.[0] || null);
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              size="sm"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              👥 Resource Allocation
+            </Button>
+            <Button
+              onClick={() => {
+                setShowRiskTrendAnalysis(true);
+                setSelectedProjectForRiskTrends(projectsData?.projects?.[0] || null);
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              size="sm"
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              📈 Risk Trends
+            </Button>
+            <Button
+              onClick={() => {
+                setShowDeadlineReminders(true);
+                setSelectedProjectForDeadlines(projectsData?.projects?.[0] || null);
+              }}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+              size="sm"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              ⏰ Deadlines
+            </Button>
+            <Button
+              onClick={() => {
+                setShowEscalationRules(true);
+                setSelectedProjectForEscalation(projectsData?.projects?.[0] || null);
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              size="sm"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              🚨 Escalations
+            </Button>
+            <Button
+              onClick={() => setShowApprovalWorkflows(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+              size="sm"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              ✅ Approvals
+            </Button>
+            <Button
+              onClick={() => setShowSmartNotifications(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              size="sm"
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              🔔 Smart Alerts
+            </Button>
+            <Button
+              onClick={() => setShowAITaskAssignment(true)}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              size="sm"
+            >
+              <User className="h-4 w-4 mr-2" />
+              🤖 AI Tasks
+            </Button>
             <NotificationSystem 
               userId={user.id}
               onNotificationClick={(notification) => {
@@ -2069,13 +2168,14 @@ const PMDashboard: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue Escalation</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Decision Tracking</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action Priority</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">View Project</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link to Issues</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {projectsLoading ? (
                       <tr>
-                        <td colSpan={16} className="px-6 py-4 text-center">
+                        <td colSpan={17} className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center space-x-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Loading projects...</span>
@@ -2224,6 +2324,20 @@ const PMDashboard: React.FC = () => {
                             >
                               <Target className="h-4 w-4 mr-1" />
                               🧠 AI Priority
+                            </Button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-green-600 hover:text-green-800 border-green-300"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.location.href = `/project/${project.id}`;
+                              }}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              View Project
                             </Button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -2416,6 +2530,158 @@ const PMDashboard: React.FC = () => {
           projects={projectsData?.projects || []}
           onClose={() => setShowAdvancedAnalytics(false)}
         />
+      )}
+
+      {showProjectHealthScore && selectedProjectForHealth && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Project Health Analysis</h2>
+                <button
+                  onClick={() => setShowProjectHealthScore(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <ProjectHealthScoreCard projectId={selectedProjectForHealth.id} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSmartResourceAllocation && selectedProjectForResourceAllocation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Smart Resource Allocation</h2>
+                <button
+                  onClick={() => setShowSmartResourceAllocation(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <SmartResourceAllocation projectId={selectedProjectForResourceAllocation.id} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRiskTrendAnalysis && selectedProjectForRiskTrends && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Risk Trend Analysis</h2>
+                <button
+                  onClick={() => setShowRiskTrendAnalysis(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <RiskTrendAnalysis projectId={selectedProjectForRiskTrends.id} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeadlineReminders && selectedProjectForDeadlines && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Deadline Reminders</h2>
+                <button
+                  onClick={() => setShowDeadlineReminders(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <DeadlineReminders projectId={selectedProjectForDeadlines.id} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEscalationRules && selectedProjectForEscalation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Auto-Escalation Rules</h2>
+                <button
+                  onClick={() => setShowEscalationRules(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <EscalationRules projectId={selectedProjectForEscalation.id} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showApprovalWorkflows && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Approval Workflows</h2>
+                <button
+                  onClick={() => setShowApprovalWorkflows(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <ApprovalWorkflows userRole={user.role} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSmartNotifications && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Smart Notifications</h2>
+                <button
+                  onClick={() => setShowSmartNotifications(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <SmartNotifications userRole={user.role} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAITaskAssignment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">AI-Powered Task Assignment</h2>
+                <button
+                  onClick={() => setShowAITaskAssignment(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <AITaskAssignment />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

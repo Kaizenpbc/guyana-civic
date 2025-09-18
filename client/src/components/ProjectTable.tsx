@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, Clock, DollarSign, User, AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { Calendar, Clock, DollarSign, User, AlertCircle, CheckCircle, Info, ExternalLink } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ interface ProjectTableProps {
 
 const ProjectTable: React.FC<ProjectTableProps> = ({ projects }) => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [, setLocation] = useLocation();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -249,6 +251,15 @@ const ProjectTable: React.FC<ProjectTableProps> = ({ projects }) => {
                     <p className="text-sm text-blue-600 font-medium">{project.code || 'No Code'}</p>
                     <p className="text-sm text-muted-foreground">{project.category}</p>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLocation(`/project/${project.id}`)}
+                    className="ml-2"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    View Project
+                  </Button>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button 

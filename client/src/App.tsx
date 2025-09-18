@@ -16,8 +16,10 @@ import StaffDashboard from "@/pages/StaffDashboard";
 import PMDashboard from "@/pages/PMDashboard";
 import RDCDashboard from "@/pages/RDCDashboard";
 import MinisterialDashboard from "@/pages/MinisterialDashboard";
+import ProjectPage from "@/pages/ProjectPage";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
+import React from "react";
 
 function Router() {
   return (
@@ -33,6 +35,7 @@ function Router() {
       <Route path="/rdc/dashboard" component={RDCDashboard} />
       <Route path="/admin/dashboard" component={StaffDashboard} />
       <Route path="/ministerial/dashboard" component={MinisterialDashboard} />
+      <Route path="/project/:id" component={({ params }: { params: { id: string } }) => <ProjectPage projectId={params.id} />} />
       <Route path="/unauthorized" component={Unauthorized} />
       <Route component={NotFound} />
     </Switch>
@@ -41,20 +44,22 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="gov-portal-theme">
-        <TooltipProvider>
-          <div className="relative">
-            {/* Global Theme Toggle */}
-            <div className="fixed top-4 right-4 z-50">
-              <ThemeToggle />
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="light" storageKey="gov-portal-theme">
+          <TooltipProvider>
+            <div className="relative">
+              {/* Global Theme Toggle */}
+              <div className="fixed top-4 right-4 z-50">
+                <ThemeToggle />
+              </div>
+              <Router />
             </div>
-            <Router />
-          </div>
-          <Toaster />
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+            <Toaster />
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
   );
 }
 
