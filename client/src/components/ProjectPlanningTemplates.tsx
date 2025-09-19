@@ -103,6 +103,74 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
     return previouslySelectedDocuments.some(doc => doc.id === documentId && doc.selected);
   };
 
+  // Filter documents based on selected phases
+  const getFilteredDocuments = () => {
+    if (selectedPhases.length === 0) {
+      return []; // Show no documents if no phases selected
+    }
+    
+    // If all phases are selected, show all documents
+    if (selectedPhases.length === template.phases.length) {
+      return template.documents;
+    }
+    
+    // Filter documents based on selected phases
+    return template.documents.filter(doc => {
+      // Map phase names to document relevance
+      const phaseNames = selectedPhases.map(phaseId => 
+        template.phases.find(p => p.id === phaseId)?.name.toLowerCase()
+      );
+      
+      // Check if document is relevant to any selected phase
+      return isDocumentRelevantToPhases(doc, phaseNames);
+    });
+  };
+
+  // Check if a document is relevant to the selected phases
+  const isDocumentRelevantToPhases = (doc: ProjectDocument, phaseNames: string[]) => {
+    const docName = doc.name.toLowerCase();
+    const docDescription = doc.description.toLowerCase();
+    
+    // Define phase-document relationships
+    const phaseDocumentMap: Record<string, string[]> = {
+      'project initiation': [
+        'project charter', 'stakeholder', 'kickoff', 'meeting', 'setup', 'budget', 'estimate', 
+        'site access', 'agreement', 'authorization', 'scope'
+      ],
+      'site analysis & survey': [
+        'survey', 'analysis', 'assessment', 'condition', 'traffic', 'drainage', 'utility', 
+        'environmental', 'topography', 'site survey'
+      ],
+      'design & planning': [
+        'design', 'engineering', 'specification', 'plan', 'drawing', 'blueprint', 'architectural',
+        'structural', 'mep', 'mechanical', 'electrical', 'plumbing'
+      ],
+      'procurement & permits': [
+        'procurement', 'permit', 'contract', 'tender', 'bid', 'material', 'equipment',
+        'building permits', 'safety plan', 'accessibility', 'fire safety'
+      ],
+      'construction': [
+        'construction', 'build', 'work', 'progress', 'quality', 'safety', 'inspection',
+        'material certificates', 'schedule', 'quality control', 'progress reports'
+      ],
+      'testing & commissioning': [
+        'test', 'commission', 'inspection', 'quality', 'handover', 'final inspection'
+      ],
+      'project closure': [
+        'closure', 'handover', 'final', 'completion', 'report', 'lessons', 'warranty',
+        'operation manual', 'as-built', 'documentation'
+      ]
+    };
+    
+    // Check if document matches any selected phase
+    return phaseNames.some(phaseName => {
+      const keywords = phaseDocumentMap[phaseName] || [];
+      return keywords.some(keyword => 
+        docName.includes(keyword) || docDescription.includes(keyword)
+      );
+    });
+  };
+
   // Helper functions for task-level visual indicators
   const getExistingTaskNames = () => {
     return existingTasks.map(task => task.name.toLowerCase());
@@ -501,15 +569,37 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
         }
       ],
       documents: [
-        { id: 'd1', name: 'Architectural Drawings', description: 'Complete architectural design and layout drawings', required: true },
-        { id: 'd2', name: 'Structural Engineering Report', description: 'Structural analysis and design calculations', required: true },
-        { id: 'd3', name: 'MEP Design Plans', description: 'Mechanical, electrical, and plumbing system designs', required: true },
-        { id: 'd4', name: 'Building Permits', description: 'All required building and construction permits', required: true },
-        { id: 'd5', name: 'Safety Inspection Report', description: 'Fire safety and emergency system inspection', required: true },
-        { id: 'd6', name: 'Material Certificates', description: 'Quality certificates for all building materials', required: true },
-        { id: 'd7', name: 'Accessibility Compliance', description: 'Accessibility compliance documentation and testing', required: true },
-        { id: 'd8', name: 'Warranty Documentation', description: 'Warranties for all installed systems and materials', required: false },
-        { id: 'd9', name: 'Operation Manual', description: 'Building operation and maintenance manual', required: false }
+        // Project Initiation Documents
+        { id: 'd1', name: 'Project Charter', description: 'Formal project authorization and scope definition', required: true },
+        { id: 'd2', name: 'Stakeholder Register', description: 'Complete list of project stakeholders and their roles', required: true },
+        { id: 'd3', name: 'Initial Budget Estimate', description: 'Preliminary cost estimate and funding requirements', required: true },
+        { id: 'd4', name: 'Project Kickoff Minutes', description: 'Minutes from initial project kickoff meeting', required: true },
+        { id: 'd5', name: 'Site Access Agreement', description: 'Legal agreement for site access and construction rights', required: true },
+        
+        // Design & Planning Documents
+        { id: 'd6', name: 'Architectural Drawings', description: 'Complete architectural design and layout drawings', required: true },
+        { id: 'd7', name: 'Structural Engineering Report', description: 'Structural analysis and design calculations', required: true },
+        { id: 'd8', name: 'MEP Design Plans', description: 'Mechanical, electrical, and plumbing system designs', required: true },
+        { id: 'd9', name: 'Site Survey Report', description: 'Detailed site condition and topography assessment', required: true },
+        { id: 'd10', name: 'Environmental Impact Assessment', description: 'Environmental impact analysis and mitigation plan', required: true },
+        
+        // Permits & Compliance Documents
+        { id: 'd11', name: 'Building Permits', description: 'All required building and construction permits', required: true },
+        { id: 'd12', name: 'Safety Plan', description: 'Comprehensive construction safety procedures and protocols', required: true },
+        { id: 'd13', name: 'Accessibility Compliance', description: 'Accessibility compliance documentation and testing', required: true },
+        { id: 'd14', name: 'Fire Safety Plan', description: 'Fire safety and emergency evacuation procedures', required: true },
+        
+        // Construction Documents
+        { id: 'd15', name: 'Material Certificates', description: 'Quality certificates for all building materials', required: true },
+        { id: 'd16', name: 'Construction Schedule', description: 'Detailed project timeline and milestone schedule', required: true },
+        { id: 'd17', name: 'Quality Control Plan', description: 'Quality assurance and control procedures', required: true },
+        { id: 'd18', name: 'Progress Reports', description: 'Regular construction progress and status reports', required: false },
+        
+        // Completion Documents
+        { id: 'd19', name: 'Final Inspection Report', description: 'Final building inspection and approval documentation', required: true },
+        { id: 'd20', name: 'Warranty Documentation', description: 'Warranties for all installed systems and materials', required: false },
+        { id: 'd21', name: 'Operation Manual', description: 'Building operation and maintenance manual', required: false },
+        { id: 'd22', name: 'As-Built Drawings', description: 'Final drawings reflecting actual construction', required: true }
       ]
     },
     {
@@ -813,14 +903,34 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Required Documents
+              {selectedPhases.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {getFilteredDocuments().length} documents for selected phases
+                </Badge>
+              )}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Select the documents you need to prepare for this project
+              {selectedPhases.length > 0 
+                ? `Documents relevant to your selected phases: ${selectedPhases.map(id => template.phases.find(p => p.id === id)?.name).join(', ')}`
+                : 'Select phases first to see relevant documents'
+              }
             </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {template.documents.map((doc) => (
+            {getFilteredDocuments().length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">No documents found</p>
+                <p className="text-sm">
+                  {selectedPhases.length === 0 
+                    ? 'Select phases to see relevant documents'
+                    : 'No documents are specifically relevant to the selected phases'
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {getFilteredDocuments().map((doc) => (
                 <div key={doc.id} className={`flex items-start gap-3 p-3 border rounded-lg ${isDocumentPreviouslySelected(doc.id) ? 'bg-gray-50 opacity-60' : ''}`}>
                   <Checkbox
                     id={doc.id}
@@ -842,8 +952,9 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
                     </p>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

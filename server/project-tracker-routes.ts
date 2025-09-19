@@ -486,29 +486,155 @@ export function registerProjectTrackerRoutes(app: Express) {
       const { id } = req.params;
       
       // TODO: Implement database query
-      // For now, return mock data
-      const mockProject: Project = {
-        id: id,
-        jurisdictionId: 'region-1',
-        name: 'Mabaruma Road Repairs',
-        description: 'Repair and upgrade main roads in Mabaruma area to improve transportation and connectivity for local communities.',
-        category: 'infrastructure',
-        priority: 'high',
-        scope: 'local',
-        fundingSource: 'local',
-        budgetAllocated: 2500000,
-        budgetSpent: 1625000,
-        currency: 'GYD',
-        plannedStartDate: '2024-01-01',
-        plannedEndDate: '2024-06-30',
-        actualStartDate: '2024-01-15',
-        status: 'in_progress',
-        progressPercentage: 65,
-        createdBy: 'admin-1',
-        isPublic: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-15T00:00:00Z'
-      };
+      // For now, return mock data based on project ID
+      let mockProject: Project;
+      
+      if (id === 'proj-pm-1') {
+        mockProject = {
+          id: id,
+          code: 'RDC2-000001',
+          jurisdictionId: 'region-2',
+          name: 'Essequibo Coast School Renovation',
+          description: 'Complete renovation of primary school facilities in Essequibo Coast',
+          category: 'education',
+          priority: 'high',
+          scope: 'local',
+          fundingSource: 'regional',
+          budgetAllocated: 3200000,
+          budgetSpent: 1280000,
+          currency: 'GYD',
+          plannedStartDate: '2024-03-01',
+          plannedEndDate: '2024-09-30',
+          actualStartDate: '2024-03-05',
+          isPublic: true,
+          createdAt: '2024-02-15T00:00:00Z',
+          updatedAt: '2024-10-15T10:30:00Z',
+          projectManagerId: 'pm-001',
+          assignedTo: 'user-6',
+          status: 'in_progress',
+          progressPercentage: 40
+        };
+      } else if (id === 'proj-pm-2') {
+        mockProject = {
+          id: id,
+          code: 'RDC2-000002',
+          jurisdictionId: 'region-2',
+          name: 'Anna Regina Sports Complex',
+          description: 'Construction of modern sports facility with multiple courts and recreational areas',
+          category: 'recreation',
+          priority: 'medium',
+          scope: 'regional',
+          fundingSource: 'national',
+          budgetAllocated: 4500000,
+          budgetSpent: 900000,
+          currency: 'GYD',
+          plannedStartDate: '2024-06-01',
+          plannedEndDate: '2025-03-31',
+          isPublic: true,
+          createdAt: '2024-05-01T00:00:00Z',
+          updatedAt: '2024-10-15T10:30:00Z',
+          projectManagerId: 'pm-001',
+          assignedTo: 'user-6',
+          status: 'in_progress',
+          progressPercentage: 20
+        };
+      } else if (id === 'proj-pm-3') {
+        mockProject = {
+          id: id,
+          code: 'RDC2-000003',
+          jurisdictionId: 'region-2',
+          name: 'Bartica Health Center Upgrade',
+          description: 'Modernization of healthcare facilities and equipment in Bartica region',
+          category: 'healthcare',
+          priority: 'high',
+          scope: 'regional',
+          fundingSource: 'national',
+          budgetAllocated: 2800000,
+          budgetSpent: 560000,
+          currency: 'GYD',
+          plannedStartDate: '2024-08-01',
+          plannedEndDate: '2025-02-28',
+          isPublic: true,
+          createdAt: '2024-07-01T00:00:00Z',
+          updatedAt: '2024-10-15T10:30:00Z',
+          projectManagerId: 'pm-001',
+          assignedTo: 'user-6',
+          status: 'in_progress',
+          progressPercentage: 20
+        };
+      } else if (id === 'proj-pm-4') {
+        mockProject = {
+          id: id,
+          code: 'RDC2-000004',
+          jurisdictionId: 'region-2',
+          name: 'Anna Regina Sports Complex',
+          description: 'Construction of modern sports complex with football field, basketball court, and community facilities in Anna Regina',
+          category: 'infrastructure',
+          priority: 'high',
+          scope: 'local',
+          fundingSource: 'regional',
+          budgetAllocated: 7500000,
+          budgetSpent: 1500000,
+          currency: 'GYD',
+          plannedStartDate: '2024-06-01',
+          plannedEndDate: '2025-03-31',
+          isPublic: true,
+          createdAt: '2024-05-01T00:00:00Z',
+          updatedAt: '2024-10-15T10:30:00Z',
+          projectManagerId: 'pm-001',
+          assignedTo: 'user-6',
+          status: 'in_progress',
+          progressPercentage: 20
+        };
+      } else if (id === 'proj-pm-5') {
+        mockProject = {
+          id: id,
+          code: 'RDC2-000005',
+          jurisdictionId: 'region-2',
+          name: 'Georgetown Water Treatment Plant',
+          description: 'Construction of advanced water treatment facility for Georgetown and surrounding areas',
+          category: 'infrastructure',
+          priority: 'critical',
+          scope: 'regional',
+          fundingSource: 'national',
+          budgetAllocated: 12000000,
+          budgetSpent: 2400000,
+          currency: 'GYD',
+          plannedStartDate: '2024-04-01',
+          plannedEndDate: '2025-12-31',
+          isPublic: true,
+          createdAt: '2024-03-01T00:00:00Z',
+          updatedAt: '2024-10-15T10:30:00Z',
+          projectManagerId: 'pm-001',
+          assignedTo: 'user-6',
+          status: 'in_progress',
+          progressPercentage: 20
+        };
+      } else {
+        // Default fallback project
+        mockProject = {
+          id: id,
+          jurisdictionId: 'region-1',
+          name: 'Project Not Found',
+          description: 'The requested project could not be found',
+          category: 'unknown',
+          priority: 'medium',
+          scope: 'unknown',
+          fundingSource: 'unknown',
+          budgetAllocated: 0,
+          budgetSpent: 0,
+          currency: 'GYD',
+          plannedStartDate: '2024-01-01',
+          plannedEndDate: '2024-06-30',
+          actualStartDate: '2024-01-15',
+          status: 'in_progress',
+          progressPercentage: 65,
+          createdBy: 'admin-1',
+          isPublic: true,
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-15T00:00:00Z'
+        };
+      }
 
       res.json(mockProject);
     } catch (error) {

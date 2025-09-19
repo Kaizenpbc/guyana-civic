@@ -116,6 +116,24 @@ export function registerPMToolRoutes(app: Express) {
   // PROJECT SCHEDULE MANAGEMENT
   // =============================================
   
+  // Delete schedule (for testing)
+  app.delete("/api/projects/:projectId/schedules/current", requireAuth, requirePM, async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const scheduleId = `schedule-${projectId}-current`;
+      
+      // Clear from memory
+      delete updatedSchedules[scheduleId];
+      delete updatedTasks[scheduleId];
+      
+      console.log(`Deleted schedule for project ${projectId}`);
+      res.json({ message: 'Schedule deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting schedule:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
   // Get all schedules for a project
   app.get("/api/projects/:projectId/schedules", requireAuth, requirePM, async (req, res) => {
     try {
@@ -155,47 +173,28 @@ export function registerPMToolRoutes(app: Express) {
   app.get("/api/projects/:projectId/schedules/current", requireAuth, requirePM, async (req, res) => {
     try {
       const { projectId } = req.params;
-      const scheduleId = `schedule-${projectId}-current`;
       
-      // Check if we have an updated schedule in memory
-      if (updatedSchedules[scheduleId]) {
-        console.log('Returning updated schedule from memory:', updatedSchedules[scheduleId]);
-        return res.json(updatedSchedules[scheduleId]);
+      console.log('🔍 Looking for schedules for project:', projectId);
+      console.log('📋 All schedules in memory:', Object.keys(updatedSchedules));
+      
+      // Look for any schedule for this project (they all start with schedule-{projectId}-)
+      const projectSchedules = Object.keys(updatedSchedules).filter(key => 
+        key.startsWith(`schedule-${projectId}-`)
+      );
+      
+      console.log('🎯 Found project schedules:', projectSchedules);
+      
+      if (projectSchedules.length > 0) {
+        // Get the most recent schedule (highest timestamp)
+        const latestScheduleKey = projectSchedules.sort().pop();
+        const latestSchedule = updatedSchedules[latestScheduleKey!];
+        console.log('✅ Returning latest schedule from memory:', latestSchedule);
+        return res.json(latestSchedule);
       }
       
-      // TODO: Implement database query
-      const mockSchedule: ProjectSchedule = {
-        id: scheduleId,
-        projectId: projectId,
-        name: "Current Project Schedule",
-        description: "Active project schedule",
-        templateId: "building-construction",
-        templateName: "Building Construction",
-        selectedPhases: [
-          { id: "initiation", name: "Project Initiation", selected: true },
-          { id: "planning", name: "Planning & Design", selected: true },
-          { id: "execution", name: "Construction", selected: true },
-          { id: "monitoring", name: "Monitoring & Control", selected: false }
-        ],
-        selectedDocuments: [
-          { id: "project-charter", name: "Project Charter", selected: true },
-          { id: "scope-statement", name: "Scope Statement", selected: true },
-          { id: "work-breakdown", name: "Work Breakdown Structure", selected: true },
-          { id: "risk-register", name: "Risk Register", selected: false }
-        ],
-        status: "active",
-        version: 1,
-        isCurrent: true,
-        totalDurationDays: 120,
-        totalTasks: 15,
-        completedTasks: 3,
-        progressPercentage: 20,
-        createdAt: "2024-01-15T10:00:00Z",
-        updatedAt: "2024-01-20T14:30:00Z",
-        createdBy: req.user.id
-      };
-
-      res.json(mockSchedule);
+      // No schedule exists - return 404
+      console.log('❌ No schedule found for project:', projectId);
+      res.status(404).json({ error: 'No schedule found' });
     } catch (error) {
       console.error("Error fetching current schedule:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -229,6 +228,13 @@ export function registerPMToolRoutes(app: Express) {
         updatedAt: new Date().toISOString(),
         createdBy: req.user.id
       };
+
+      // Store the schedule in memory
+      updatedSchedules[newSchedule.id] = newSchedule;
+      console.log('💾 Stored new schedule in memory:', newSchedule);
+      console.log('📊 Total schedules in memory:', Object.keys(updatedSchedules).length);
+      console.log('🔑 Schedule ID stored:', newSchedule.id);
+      console.log('📋 All schedule keys after storage:', Object.keys(updatedSchedules));
 
       res.status(201).json(newSchedule);
     } catch (error) {
@@ -576,7 +582,10 @@ export function registerPMToolRoutes(app: Express) {
       
       // Store the tasks in memory
       updatedTasks[scheduleId] = tasks;
-      console.log('Stored tasks in memory:', tasks);
+      console.log('💾 Stored tasks in memory for schedule:', scheduleId);
+      console.log('📊 Total tasks stored:', tasks.length);
+      console.log('🔑 Task storage key:', scheduleId);
+      console.log('📋 All task keys in memory:', Object.keys(updatedTasks));
 
       res.status(200).json({ 
         success: true, 

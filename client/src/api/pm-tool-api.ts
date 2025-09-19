@@ -101,11 +101,60 @@ export const getProjectSchedules = async (projectId: string): Promise<ProjectSch
 };
 
 // Get current schedule for a project
-export const getCurrentSchedule = async (projectId: string): Promise<ProjectSchedule> => {
-  const response = await fetch(`/api/projects/${projectId}/schedules/current`);
+export const getCurrentScheduleV3 = async (projectId: string): Promise<ProjectSchedule | null> => {
+  console.log('🔍 getCurrentScheduleV3 called with updated API function - VERSION 3 - FRESH START');
+  const response = await fetch(`/api/projects/${projectId}/schedules/current?t=${Date.now()}&v=3&fresh=true`, {
+    credentials: 'include',
+    cache: 'no-cache',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  });
+  
+  console.log('📡 Response status:', response.status);
+  
+  if (response.status === 404) {
+    // No schedule exists - this is normal for blank projects
+    console.log('✅ No schedule found - returning null (this is normal)');
+    return null;
+  }
+  
   if (!response.ok) {
     throw new Error('Failed to fetch current schedule');
   }
+  
+  return response.json();
+};
+
+// Keep the old function for backward compatibility but mark it as deprecated
+export const getCurrentSchedule = getCurrentScheduleV3;
+
+// Alternative function with completely different name to force browser reload
+export const fetchProjectSchedule = async (projectId: string): Promise<ProjectSchedule | null> => {
+  console.log('🔍 fetchProjectSchedule called - COMPLETELY NEW FUNCTION - FORCE RELOAD');
+  const response = await fetch(`/api/projects/${projectId}/schedules/current?t=${Date.now()}&v=5&force=true&reload=true`, {
+    credentials: 'include',
+    cache: 'no-cache',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  });
+  
+  console.log('📡 Response status:', response.status);
+  
+  if (response.status === 404) {
+    // No schedule exists - this is normal for blank projects
+    console.log('✅ No schedule found - returning null (this is normal)');
+    return null;
+  }
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch current schedule');
+  }
+  
   return response.json();
 };
 
@@ -170,6 +219,7 @@ export const saveBulkTasks = async (scheduleId: string, tasks: ScheduleTask[]): 
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify({ tasks }),
   });
   if (!response.ok) {

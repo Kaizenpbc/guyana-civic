@@ -35,7 +35,9 @@ import {
   ChevronDown,
   Save,
   Loader2,
-  FileText
+  FileText,
+  X,
+  LogOut
 } from 'lucide-react';
 import { ProjectTable } from '@/components/ProjectTable';
 import RAIDDashboard from '@/components/RAIDDashboard';
@@ -48,7 +50,7 @@ import EscalationRules from '@/components/EscalationRules';
 import SmartNotifications from '@/components/SmartNotifications';
 import AITaskAssignment from '@/components/AITaskAssignment';
 import { 
-  getCurrentSchedule, 
+  getCurrentScheduleFresh as getCurrentSchedule,
   createSchedule, 
   updateSchedule, 
   addPhasesToSchedule,
@@ -63,7 +65,8 @@ import {
   type ScheduleTask,
   type ScheduleTemplate,
   type PMChecklistTemplate
-} from '@/api/pm-tool-api';
+} from '@/api/pm-tool-api-fresh';
+import ProjectPlanningTemplates from '@/components/ProjectPlanningTemplates';
 
 interface Project {
   id: string;
@@ -134,52 +137,36 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     }
   });
 
-  // Mock project data - in real app, fetch from API
+  // Fetch real project data from API
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setLoading(true);
         
-        // Mock project data
-        const mockProject: Project = {
-          id: projectId,
-          code: 'RDC2-000001',
-          name: 'Road Construction Phase 2',
-          description: 'Major infrastructure project to improve connectivity between regions',
-          status: 'in_progress',
-          progressPercentage: 65,
-          category: 'infrastructure',
-          priority: 'high',
-          scope: 'regional',
-          fundingSource: 'national',
-          budgetAllocated: 2500000,
-          budgetSpent: 1625000,
-          currency: 'GYD',
-          plannedStartDate: '2024-01-15',
-          plannedEndDate: '2024-12-31',
-          actualStartDate: '2024-01-20',
-          isPublic: true,
-          createdAt: '2024-01-01T00:00:00Z',
-          updatedAt: '2024-10-15T10:30:00Z',
-          projectManagerId: 'pm-001',
-          assignedTo: 'john.doe@rdc.gov'
-        };
+        // Fetch project data from API
+        const response = await fetch(`/api/projects/${projectId}`, {
+          credentials: 'include'
+        });
         
-        setProject(mockProject);
+        if (!response.ok) {
+          throw new Error('Failed to fetch project');
+        }
+        
+        const projectData = await response.json();
+        setProject(projectData);
         
         // Populate settings with project data
         setProjectSettings({
-          name: mockProject.name,
-          description: mockProject.description,
-          category: mockProject.category,
-          priority: mockProject.priority,
-          scope: mockProject.scope,
-          fundingSource: mockProject.fundingSource,
-          budgetAllocated: mockProject.budgetAllocated,
-          currency: mockProject.currency,
-          plannedStartDate: mockProject.plannedStartDate,
-          plannedEndDate: mockProject.plannedEndDate,
+          name: projectData.name,
+          description: projectData.description,
+          category: projectData.category,
+          priority: projectData.priority,
+          scope: projectData.scope,
+          fundingSource: projectData.fundingSource,
+          budgetAllocated: projectData.budgetAllocated,
+          currency: projectData.currency,
+          plannedStartDate: projectData.plannedStartDate,
+          plannedEndDate: projectData.plannedEndDate,
           notifications: {
             deadlineAlerts: true,
             budgetAlerts: true,
@@ -189,6 +176,28 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
         });
       } catch (error) {
         console.error('Error fetching project:', error);
+        // Set a fallback project if API fails
+        const fallbackProject: Project = {
+          id: projectId,
+          code: 'UNKNOWN',
+          name: 'Project Not Found',
+          description: 'Unable to load project data',
+          status: 'planning',
+          progressPercentage: 0,
+          category: 'unknown',
+          priority: 'medium',
+          scope: 'unknown',
+          fundingSource: 'unknown',
+          budgetAllocated: 0,
+          budgetSpent: 0,
+          currency: 'GYD',
+          plannedStartDate: new Date().toISOString().split('T')[0],
+          plannedEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          isPublic: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setProject(fallbackProject);
       } finally {
         setLoading(false);
       }
@@ -202,12 +211,16 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     const loadSchedule = async () => {
       if (!projectId) return;
       
+      console.log('🔄 LOADING SCHEDULE - Starting to load schedule for project:', projectId);
       try {
         const schedule = await getCurrentSchedule(projectId);
+        console.log('📊 SCHEDULE LOADED - Schedule result:', schedule);
         setCurrentSchedule(schedule);
         
         if (schedule) {
+          console.log('✅ SCHEDULE FOUND - Loading tasks for schedule:', schedule.id);
           const tasks = await getScheduleTasks(schedule.id);
+          console.log('📋 TASKS LOADED - Found', tasks.length, 'tasks');
           setScheduleTasks(tasks);
           
           // Build task hierarchy
@@ -252,12 +265,264 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     
     setIsSaving(true);
     try {
-      await updateSchedule(currentSchedule.id, currentSchedule);
+      await updateSchedule(projectId, currentSchedule.id, currentSchedule);
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Error saving schedule:', error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAddPhases = async () => {
+    console.log('Add Phases clicked - checking if schedule exists');
+    
+    // If no schedule exists, create one first
+    if (!currentSchedule) {
+      try {
+        console.log('No schedule exists, creating new schedule...');
+        const newSchedule = await createSchedule(projectId, {
+          name: "Current Project Schedule",
+          description: "Active project schedule",
+          templateId: "building-construction",
+          templateName: "Building Construction"
+        });
+        setCurrentSchedule(newSchedule);
+        console.log('New schedule created:', newSchedule);
+      } catch (error) {
+        console.error('Error creating schedule:', error);
+        alert('Error creating schedule. Please try again.');
+        return;
+      }
+    }
+    
+    console.log('Showing template selection');
+    setShowTemplates(true);
+  };
+
+  const handleClearSchedule = async () => {
+    if (!confirm('Are you sure you want to clear the current schedule? This will delete all phases and tasks.')) {
+      return;
+    }
+    
+    try {
+      // Delete the schedule from the server
+      const response = await fetch(`/api/projects/${projectId}/schedules/current`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete schedule from server');
+      }
+      
+      // Clear the frontend state
+      setCurrentSchedule(null);
+      setScheduleTasks([]);
+      setTaskHierarchy({});
+      setHasUnsavedChanges(false);
+      
+      console.log('Schedule cleared successfully from server and frontend');
+      alert('Schedule cleared! You can now add fresh phases.');
+    } catch (error) {
+      console.error('Error clearing schedule:', error);
+      alert('Error clearing schedule. Please try again.');
+    }
+  };
+
+  const handleTemplateSelection = async (templateData: any) => {
+    if (!currentSchedule) return;
+    
+    try {
+      console.log('🎯 Template data received:', templateData);
+      const selectedPhases = templateData.selectedPhases || [];
+      const selectedDocuments = templateData.selectedDocuments || [];
+      
+      console.log('📋 Adding selected phases to schedule:', selectedPhases);
+      console.log('📄 Selected documents:', selectedDocuments);
+      console.log('📊 selectedPhases length:', selectedPhases.length);
+      console.log('📊 selectedDocuments length:', selectedDocuments.length);
+      
+      // Check if schedule already has tasks - if so, inform user that we'll add to existing tasks
+      if (scheduleTasks.length > 0) {
+        console.log(`Adding new phases to existing schedule with ${scheduleTasks.length} tasks`);
+        // We'll add to existing tasks, not replace them
+      }
+      
+      // Start with existing tasks to preserve them
+      const allTasks: ScheduleTask[] = [...scheduleTasks];
+      const timestamp = Date.now();
+      
+      console.log(`📋 Starting with ${allTasks.length} existing tasks`);
+      
+      console.log('🏗️ Starting to create tasks...');
+      console.log('⏰ Timestamp:', timestamp);
+      
+      // Create summary tasks (phases) and their subtasks
+      selectedPhases.forEach((phase, phaseIndex) => {
+        console.log(`🔄 Processing phase ${phaseIndex}:`, phase);
+        const phaseId = `phase-${phase.id}-${timestamp}`;
+        const phaseStartDate = new Date(Date.now() + phaseIndex * 30 * 24 * 60 * 60 * 1000);
+        const phaseEndDate = new Date(phaseStartDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        
+        // Create the phase as a summary task
+        const phaseTask: ScheduleTask = {
+          id: phaseId,
+          name: phase.name,
+          description: phase.description || `${phase.name} phase`,
+          startDate: phaseStartDate.toISOString().split('T')[0],
+          endDate: phaseEndDate.toISOString().split('T')[0],
+          status: "not-started" as const,
+          priority: "high" as const,
+          progress: 0,
+          estimatedHours: 0, // Will be calculated from subtasks
+          actualHours: 0,
+          assignedTo: null,
+          parentTaskId: null, // This is a summary task
+          dependencies: phaseIndex > 0 ? [`phase-${selectedPhases[phaseIndex - 1].id}-${timestamp}`] : [],
+          subtasks: []
+        };
+        
+        allTasks.push(phaseTask);
+        console.log(`✅ Added phase task: ${phaseTask.name} (total tasks: ${allTasks.length})`);
+        
+        // Create subtasks for this phase using the actual template tasks
+        if (phase.tasks && phase.tasks.length > 0) {
+          console.log(`📋 Using ${phase.tasks.length} tasks from template for ${phase.name}`);
+          
+          phase.tasks.forEach((templateTask, taskIndex) => {
+            const taskStartDate = new Date(phaseStartDate.getTime() + taskIndex * 10 * 24 * 60 * 60 * 1000);
+            const taskEndDate = new Date(taskStartDate.getTime() + 10 * 24 * 60 * 60 * 1000);
+            
+            const subtaskTask: ScheduleTask = {
+              id: `subtask-${phase.id}-${taskIndex}-${timestamp}`,
+              name: templateTask.name,
+              description: templateTask.description || `${templateTask.name} task`,
+              startDate: taskStartDate.toISOString().split('T')[0],
+              endDate: taskEndDate.toISOString().split('T')[0],
+              status: "not-started" as const,
+              priority: "medium" as const,
+              progress: 0,
+              estimatedHours: templateTask.estimatedHours || 8,
+              actualHours: 0,
+              assignedTo: null,
+              parentTaskId: phaseId,
+              dependencies: taskIndex > 0 ? [`subtask-${phase.id}-${taskIndex - 1}-${timestamp}`] : [],
+              subtasks: []
+            };
+            
+            allTasks.push(subtaskTask);
+            console.log(`✅ Added template task: ${subtaskTask.name} (total tasks: ${allTasks.length})`);
+          });
+        } else {
+          console.log(`⚠️ No tasks found in template for ${phase.name}, creating default subtasks`);
+          
+          // Fallback to default subtasks if template doesn't have tasks
+          const defaultSubtasks = [
+            {
+              name: `${phase.name} - Initiation`,
+              description: `Initial setup and planning for ${phase.name}`,
+              estimatedHours: 8
+            },
+            {
+              name: `${phase.name} - Execution`,
+              description: `Main execution activities for ${phase.name}`,
+              estimatedHours: 16
+            },
+            {
+              name: `${phase.name} - Review`,
+              description: `Review and validation for ${phase.name}`,
+              estimatedHours: 8
+            }
+          ];
+          
+          defaultSubtasks.forEach((subtask, subtaskIndex) => {
+            const subtaskStartDate = new Date(phaseStartDate.getTime() + subtaskIndex * 10 * 24 * 60 * 60 * 1000);
+            const subtaskEndDate = new Date(subtaskStartDate.getTime() + 10 * 24 * 60 * 60 * 1000);
+            
+            const subtaskTask: ScheduleTask = {
+              id: `subtask-${phase.id}-${subtaskIndex}-${timestamp}`,
+              name: subtask.name,
+              description: subtask.description,
+              startDate: subtaskStartDate.toISOString().split('T')[0],
+              endDate: subtaskEndDate.toISOString().split('T')[0],
+              status: "not-started" as const,
+              priority: "medium" as const,
+              progress: 0,
+              estimatedHours: subtask.estimatedHours,
+              actualHours: 0,
+              assignedTo: null,
+              parentTaskId: phaseId,
+              dependencies: subtaskIndex > 0 ? [`subtask-${phase.id}-${subtaskIndex - 1}-${timestamp}`] : [],
+              subtasks: []
+            };
+            
+            allTasks.push(subtaskTask);
+            console.log(`✅ Added default subtask: ${subtaskTask.name} (total tasks: ${allTasks.length})`);
+          });
+        }
+      });
+
+      // Create document tasks for each selected document
+      selectedDocuments.forEach((document, docIndex) => {
+        const docStartDate = new Date(Date.now() + (selectedPhases.length * 30 + docIndex * 7) * 24 * 60 * 60 * 1000);
+        const docEndDate = new Date(docStartDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        
+        const documentTask: ScheduleTask = {
+          id: `document-${document.id}-${timestamp}`,
+          name: `📄 ${document.name}`,
+          description: document.description || `Document: ${document.name}`,
+          startDate: docStartDate.toISOString().split('T')[0],
+          endDate: docEndDate.toISOString().split('T')[0],
+          status: "not-started" as const,
+          priority: "medium" as const,
+          progress: 0,
+          estimatedHours: 4, // Default hours for document tasks
+          actualHours: 0,
+          assignedTo: null,
+          parentTaskId: null, // Documents are standalone tasks
+          dependencies: selectedPhases.length > 0 ? [`phase-${selectedPhases[selectedPhases.length - 1].id}-${timestamp}`] : [],
+          subtasks: []
+        };
+        
+        allTasks.push(documentTask);
+        console.log(`✅ Added document task: ${documentTask.name} (total tasks: ${allTasks.length})`);
+      });
+
+      // Save all tasks (phases, subtasks, and documents)
+      console.log('Saving bulk tasks:', allTasks);
+    console.log('💾 SCHEDULE SAVED - allTasks length:', allTasks.length);
+    console.log('📊 allTasks type:', typeof allTasks);
+    console.log('📊 allTasks is array:', Array.isArray(allTasks));
+      
+      if (!Array.isArray(allTasks) || allTasks.length === 0) {
+        throw new Error('No tasks to save - allTasks is empty or not an array');
+      }
+      
+      await saveBulkTasks(currentSchedule.id, allTasks);
+      
+      // Reload the schedule
+      const tasks = await getScheduleTasks(currentSchedule.id);
+      setScheduleTasks(tasks);
+      
+      // Build task hierarchy
+      const hierarchy: Record<string, ScheduleTask[]> = {};
+      tasks.forEach(task => {
+        if (task.parentTaskId) {
+          if (!hierarchy[task.parentTaskId]) {
+            hierarchy[task.parentTaskId] = [];
+          }
+          hierarchy[task.parentTaskId].push(task);
+        }
+      });
+      setTaskHierarchy(hierarchy);
+      
+      setHasUnsavedChanges(true);
+      setShowTemplates(false);
+      
+      console.log('Phases and subtasks added successfully!');
+    } catch (error) {
+      console.error('Error adding phases:', error);
     }
   };
 
@@ -448,6 +713,27 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
                 <div className="text-sm text-gray-500">Project Health</div>
                 <div className="text-2xl font-bold text-green-600">78/100</div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/auth/logout', {
+                      method: 'POST',
+                      credentials: 'include'
+                    });
+                    if (response.ok) {
+                      window.location.href = '/';
+                    }
+                  } catch (error) {
+                    console.error('Logout error:', error);
+                  }
+                }}
+                className="text-red-600 hover:text-red-800 border-red-300"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
               <Dialog open={showSettings} onOpenChange={setShowSettings}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -948,11 +1234,19 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
                 <div className="flex gap-3">
                   <Button 
                     variant="outline"
-                    onClick={() => setShowTemplates(true)}
+                    onClick={handleAddPhases}
                     className="flex items-center gap-2"
                   >
                     <Plus className="h-4 w-4" />
                     Add Phases
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={handleClearSchedule}
+                    className="flex items-center gap-2 text-red-600 hover:text-red-800 border-red-300"
+                  >
+                    <X className="h-4 w-4" />
+                    Clear Schedule
                   </Button>
                   <Button 
                     onClick={handleSaveSchedule}
@@ -1388,6 +1682,54 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Template Selection Modal */}
+      {showTemplates && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Add Phases to Project</h2>
+                      <p className="text-gray-600">Select phases and documents to add to your project schedule</p>
+                      {scheduleTasks.length > 0 && (
+                        <p className="text-sm text-amber-600 mt-1">
+                          ⚠️ Schedule already has {scheduleTasks.length} tasks. New phases will be added to existing ones.
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {scheduleTasks.length > 0 && (
+                        <Button 
+                          variant="outline"
+                          onClick={handleClearSchedule}
+                          className="text-red-600 hover:text-red-800 border-red-300"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Clear Schedule
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => setShowTemplates(false)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+            
+            <ProjectPlanningTemplates
+              projectCategory={project.category}
+              onTemplateSelect={handleTemplateSelection}
+              onClose={() => setShowTemplates(false)}
+              previouslySelectedPhases={currentSchedule?.selectedPhases}
+              previouslySelectedDocuments={currentSchedule?.selectedDocuments}
+              isAddMode={!!currentSchedule}
+              existingTasks={scheduleTasks}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
