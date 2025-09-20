@@ -50,22 +50,20 @@ import EscalationRules from '@/components/EscalationRules';
 import SmartNotifications from '@/components/SmartNotifications';
 import AITaskAssignment from '@/components/AITaskAssignment';
 import { 
-  getCurrentScheduleFresh as getCurrentSchedule,
+  getCurrentSchedule,
   createSchedule, 
   updateSchedule, 
-  addPhasesToSchedule,
   saveBulkTasks,
   getScheduleTasks, 
   updateTask, 
-  addSubtask,
   getScheduleTemplates,
   getPMChecklistTemplates,
   getChecklistForTaskType,
+  clearSchedule,
   type ProjectSchedule,
   type ScheduleTask,
-  type ScheduleTemplate,
-  type PMChecklistTemplate
-} from '@/api/pm-tool-api-fresh';
+  type ScheduleTemplate
+} from '@/api/pm-application-api';
 import ProjectPlanningTemplates from '@/components/ProjectPlanningTemplates';
 
 interface Project {
@@ -306,15 +304,8 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
     }
     
     try {
-      // Delete the schedule from the server
-      const response = await fetch(`/api/projects/${projectId}/schedules/current`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete schedule from server');
-      }
+      // Clear schedule using PM Application API
+      await clearSchedule(projectId);
       
       // Clear the frontend state
       setCurrentSchedule(null);
@@ -322,7 +313,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
       setTaskHierarchy({});
       setHasUnsavedChanges(false);
       
-      console.log('Schedule cleared successfully from server and frontend');
+      console.log('✅ Schedule cleared successfully from PM Application');
       alert('Schedule cleared! You can now add fresh phases.');
     } catch (error) {
       console.error('Error clearing schedule:', error);

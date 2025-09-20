@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Application - Project Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    PM Application
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Project Management System
+                </p>
+            </div>
+            <form class="mt-8 space-y-6" id="loginForm">
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div>
+                        <label for="email" class="sr-only">Email address</label>
+                        <input id="email" name="email" type="email" required 
+                               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
+                               placeholder="Email address">
+                    </div>
+                    <div>
+                        <label for="password" class="sr-only">Password</label>
+                        <input id="password" name="password" type="password" required 
+                               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
+                               placeholder="Password">
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" 
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Sign in
+                    </button>
+                </div>
+
+                <div class="text-center">
+                    <button type="button" onclick="showRegister()" 
+                            class="text-indigo-600 hover:text-indigo-500 text-sm">
+                        Don't have an account? Register
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Screen -->
+    <div id="registerScreen" class="min-h-screen flex items-center justify-center hidden">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    Create Account
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Join the PM Application
+                </p>
+            </div>
+            <form class="mt-8 space-y-6" id="registerForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="regName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input id="regName" name="name" type="text" required 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                               placeholder="Your full name">
+                    </div>
+                    <div>
+                        <label for="regEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input id="regEmail" name="email" type="email" required 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                               placeholder="Email address">
+                    </div>
+                    <div>
+                        <label for="regPassword" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input id="regPassword" name="password" type="password" required 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                               placeholder="Password">
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" 
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Create Account
+                    </button>
+                </div>
+
+                <div class="text-center">
+                    <button type="button" onclick="showLogin()" 
+                            class="text-indigo-600 hover:text-indigo-500 text-sm">
+                        Already have an account? Sign in
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="min-h-screen hidden">
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-900">PM Application</h1>
+                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">Project Management System</span>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="window.location.href='http://localhost:5000'" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+                        ← Back to RDC Main App
+                    </button>
+                    <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Projects List -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold">Projects</h2>
+                            <button onclick="showCreateProject()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                                + New Project
+                            </button>
+                        </div>
+                        <div id="projectsList" class="space-y-3">
+                            <!-- Projects will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="font-semibold mb-4">Quick Stats</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Projects</span>
+                                <span id="totalProjects" class="font-medium">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Active Projects</span>
+                                <span id="activeProjects" class="font-medium">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="font-semibold mb-4">System Status</h3>
+                        <div class="space-y-2">
+                            <div class="flex items-center text-sm">
+                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                <span>Server: Running</span>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                                <span>Port: 3001</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Project Modal -->
+    <div id="createProjectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <h3 class="text-lg font-medium mb-4">Create New Project</h3>
+                    <form id="createProjectForm">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Project Name</label>
+                                <input type="text" id="projectName" required 
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea id="projectDescription" rows="3" 
+                                          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button type="button" onclick="hideCreateProject()" 
+                                    class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                                Create Project
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Authentication state
+        let currentUser = null;
+        let authToken = null;
+
+        // Check if user is already logged in
+        function checkAuth() {
+            const token = localStorage.getItem('pm_auth_token');
+            const user = localStorage.getItem('pm_user');
+            
+            if (token && user) {
+                authToken = token;
+                currentUser = JSON.parse(user);
+                showDashboard();
+                loadProjects();
+            } else {
+                showLogin();
+            }
+        }
+
+        // Show login screen
+        function showLogin() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('registerScreen').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        }
+
+        // Show register screen
+        function showRegister() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('registerScreen').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+        }
+
+        // Show dashboard
+        function showDashboard() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('registerScreen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+        }
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // For demo purposes, accept any email/password
+                if (email && password) {
+                    currentUser = { name: email.split('@')[0], email: email };
+                    authToken = 'demo_token_' + Date.now();
+                    
+                    localStorage.setItem('pm_auth_token', authToken);
+                    localStorage.setItem('pm_user', JSON.stringify(currentUser));
+                    
+                    showDashboard();
+                    loadProjects();
+                } else {
+                    alert('Please enter email and password');
+                }
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        });
+
+        // Register form handler
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                // For demo purposes, create account
+                if (name && email && password) {
+                    currentUser = { name: name, email: email };
+                    authToken = 'demo_token_' + Date.now();
+                    
+                    localStorage.setItem('pm_auth_token', authToken);
+                    localStorage.setItem('pm_user', JSON.stringify(currentUser));
+                    
+                    showDashboard();
+                    loadProjects();
+                } else {
+                    alert('Please fill in all fields');
+                }
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        });
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('pm_auth_token');
+            localStorage.removeItem('pm_user');
+            currentUser = null;
+            authToken = null;
+            showLogin();
+        }
+
+        // Load projects
+        function loadProjects() {
+            // Demo projects
+            const projects = [
+                { id: 1, name: 'Sample Project', description: 'A sample project for demonstration', status: 'Active' },
+                { id: 2, name: 'Test Project', description: 'Another test project', status: 'Planning' }
+            ];
+
+            const projectsList = document.getElementById('projectsList');
+            projectsList.innerHTML = '';
+
+            projects.forEach(project => {
+                const projectDiv = document.createElement('div');
+                projectDiv.className = 'border rounded-lg p-4 hover:bg-gray-50 cursor-pointer';
+                projectDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-medium text-gray-900">${project.name}</h3>
+                            <p class="text-sm text-gray-600 mt-1">${project.description}</p>
+                        </div>
+                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">${project.status}</span>
+                    </div>
+                `;
+                projectsList.appendChild(projectDiv);
+            });
+
+            // Update stats
+            document.getElementById('totalProjects').textContent = projects.length;
+            document.getElementById('activeProjects').textContent = projects.filter(p => p.status === 'Active').length;
+        }
+
+        // Show create project modal
+        function showCreateProject() {
+            document.getElementById('createProjectModal').classList.remove('hidden');
+        }
+
+        // Hide create project modal
+        function hideCreateProject() {
+            document.getElementById('createProjectModal').classList.add('hidden');
+        }
+
+        // Create project form handler
+        document.getElementById('createProjectForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('projectName').value;
+            const description = document.getElementById('projectDescription').value;
+
+            if (name) {
+                // Add to projects list (demo)
+                const projectsList = document.getElementById('projectsList');
+                const projectDiv = document.createElement('div');
+                projectDiv.className = 'border rounded-lg p-4 hover:bg-gray-50 cursor-pointer';
+                projectDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-medium text-gray-900">${name}</h3>
+                            <p class="text-sm text-gray-600 mt-1">${description || 'No description'}</p>
+                        </div>
+                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
+                    </div>
+                `;
+                projectsList.appendChild(projectDiv);
+
+                // Update stats
+                const totalProjects = document.getElementById('totalProjects');
+                const activeProjects = document.getElementById('activeProjects');
+                totalProjects.textContent = parseInt(totalProjects.textContent) + 1;
+                activeProjects.textContent = parseInt(activeProjects.textContent) + 1;
+
+                // Clear form and hide modal
+                document.getElementById('createProjectForm').reset();
+                hideCreateProject();
+            }
+        });
+
+        // Initialize app
+        checkAuth();
+    </script>
+</body>
+</html>

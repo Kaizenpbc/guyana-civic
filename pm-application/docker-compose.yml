@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  pm-app:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=pm_user
+      - DB_PASSWORD=pm_password
+      - DB_NAME=pm_application
+      - JWT_SECRET=pm-application-production-secret
+      - ALLOWED_ORIGINS=http://localhost:5000,https://your-rdc-app.com
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: pm-application-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: pm_application
+      MYSQL_USER: pm_user
+      MYSQL_PASSWORD: pm_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  mysql_data:
