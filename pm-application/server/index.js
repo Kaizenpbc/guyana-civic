@@ -59,6 +59,30 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Browser refresh endpoint
+app.get('/refresh', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Refreshing...</title>
+      <script>
+        console.log('🔄 Refreshing browser due to server changes...');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      </script>
+    </head>
+    <body>
+      <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+        <h2>🔄 Refreshing Page...</h2>
+        <p>Server has restarted. Refreshing browser...</p>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
