@@ -149,8 +149,8 @@ export default function OrgChart({
   });
 
   const handleNodeClick = (nodeId: string) => {
-    console.log('Node clicked:', nodeId);
-    // TODO: Could navigate to employee details or update selection
+    // Navigate to employee directory with the selected employee
+    window.location.href = `/staff/directory?employee=${nodeId}`;
   };
 
   if (error) {

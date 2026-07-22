@@ -212,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const issueData = {
         ...req.body,
         jurisdictionId: id,
-        citizenId: "citizen-1" // TODO: Get from auth
+        citizenId: req.session?.user?.id || "anonymous"
       };
       
       const issue = await storage.createIssue(issueData);
@@ -432,6 +432,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(approvals);
     } catch (error) {
       console.error("Error fetching pending approvals:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Timesheet submit
+  app.post("/api/hr/timesheets/:id/submit", requireAuth, requireStaff, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Authentication required" });
+      const result = await storage.submitTimesheet(req.params.id, req.user.id);
+      if (!result) return res.status(400).json({ error: "Cannot submit timesheet" });
+      res.json(result);
+    } catch (error) {
+      console.error("Error submitting timesheet:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Timesheet approve
+  app.post("/api/hr/timesheets/:id/approve", requireAuth, requireStaff, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Authentication required" });
+      const result = await storage.approveTimesheet(req.params.id, req.user.id, req.body.comments);
+      if (!result) return res.status(400).json({ error: "Cannot approve timesheet" });
+      res.json(result);
+    } catch (error) {
+      console.error("Error approving timesheet:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Timesheet reject
+  app.post("/api/hr/timesheets/:id/reject", requireAuth, requireStaff, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Authentication required" });
+      if (!req.body.comments) return res.status(400).json({ error: "Comments required for rejection" });
+      const result = await storage.rejectTimesheet(req.params.id, req.user.id, req.body.comments);
+      if (!result) return res.status(400).json({ error: "Cannot reject timesheet" });
+      res.json(result);
+    } catch (error) {
+      console.error("Error rejecting timesheet:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Leave request approve/reject
+  app.post("/api/hr/leave/requests/:id/approve", requireAuth, requireStaff, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Authentication required" });
+      const requests = await storage.listPendingApprovals(req.user.id);
+      const leaveRequest = requests.leaveRequests.find((r: any) => r.id === req.params.id);
+      if (!leaveRequest) return res.status(404).json({ error: "Leave request not found" });
+
+      // Update status directly in storage
+      (leaveRequest as any).status = "approved";
+      (leaveRequest as any).approvedById = req.user.id;
+      (leaveRequest as any).approvedAt = new Date();
+      (leaveRequest as any).comments = req.body.comments || null;
+      res.json(leaveRequest);
+    } catch (error) {
+      console.error("Error approving leave request:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/hr/leave/requests/:id/reject", requireAuth, requireStaff, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Authentication required" });
+      if (!req.body.comments) return res.status(400).json({ error: "Comments required for rejection" });
+      const requests = await storage.listPendingApprovals(req.user.id);
+      const leaveRequest = requests.leaveRequests.find((r: any) => r.id === req.params.id);
+      if (!leaveRequest) return res.status(404).json({ error: "Leave request not found" });
+
+      (leaveRequest as any).status = "rejected";
+      (leaveRequest as any).approvedById = req.user.id;
+      (leaveRequest as any).approvedAt = new Date();
+      (leaveRequest as any).comments = req.body.comments;
+      res.json(leaveRequest);
+    } catch (error) {
+      console.error("Error rejecting leave request:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -130,64 +130,133 @@ export default function EmployeeDashboard() {
     refetchSummary();
   };
 
-  const handleViewEmployeeDetails = (id: string) => {
-    // TODO: Navigate to employee details page
-    alert(`View employee details: ${id}`);
+  const queryClient = useQueryClient();
+  const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [leaveForm, setLeaveForm] = useState({ leaveType: 'vacation', startDate: '', endDate: '', hoursRequested: '8', reason: '' });
+
+  const handleViewEmployeeDetails = (_id: string) => {
+    // Employee details are shown inline on this dashboard
   };
 
-  const handleEditTimesheet = (id: string) => {
-    // TODO: Navigate to timesheet editor
-    alert(`Edit timesheet: ${id}`);
+  const handleEditTimesheet = (_id: string) => {
+    // Timesheet editing happens inline via the TimesheetCard
   };
 
-  const handleViewTimesheetDetails = (id: string) => {
-    // TODO: Navigate to timesheet details
-    alert(`View timesheet details: ${id}`);
+  const handleViewTimesheetDetails = (_id: string) => {
+    // Timesheet details are shown inline on this dashboard
   };
 
-  const handleViewPaystubDetails = (id: string) => {
-    // TODO: Navigate to paystub details
-    alert(`View paystub details: ${id}`);
+  const handleViewPaystubDetails = (_id: string) => {
+    // Paystub details are shown inline on this dashboard
   };
 
-  const handleDownloadPaystub = (id: string) => {
-    // TODO: Implement paystub download
-    alert(`Download paystub: ${id}`);
+  const handleDownloadPaystub = async (id: string) => {
+    const paystub = summary?.recentPaystubs.find(p => p.id === id);
+    if (!paystub) return;
+    const text = `Pay Period: ${paystub.payPeriodStart} - ${paystub.payPeriodEnd}\nPay Date: ${paystub.payDate}\nGross Pay: $${paystub.grossPay}\nNet Pay: $${paystub.netPay}`;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `paystub-${paystub.payDate}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleRequestLeave = () => {
-    // TODO: Open leave request form
-    alert('Leave request form coming soon!');
+    setShowLeaveForm(true);
+  };
+
+  const handleSubmitLeaveRequest = async () => {
+    try {
+      const response = await fetch('/api/hr/leave/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leaveForm),
+      });
+      if (!response.ok) throw new Error('Failed to submit leave request');
+      setShowLeaveForm(false);
+      setLeaveForm({ leaveType: 'vacation', startDate: '', endDate: '', hoursRequested: '8', reason: '' });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/leave/requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/employee/summary'] });
+      alert('Leave request submitted successfully!');
+    } catch (error) {
+      alert('Failed to submit leave request. Please try again.');
+    }
   };
 
   const handleViewAllLeaveRequests = () => {
-    // TODO: Navigate to leave requests page
-    alert('Leave requests page coming soon!');
+    // Leave requests are shown inline on this dashboard
   };
 
-  const handleApproveTimesheet = (id: string) => {
-    // TODO: Implement approval logic
-    alert(`Approve timesheet: ${id}`);
+  const handleApproveTimesheet = async (id: string) => {
+    try {
+      const response = await fetch(`/api/hr/timesheets/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) throw new Error('Failed to approve timesheet');
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/approvals'] });
+      handleRefresh();
+    } catch (error) {
+      alert('Failed to approve timesheet. Please try again.');
+    }
   };
 
-  const handleDenyTimesheet = (id: string) => {
-    // TODO: Implement denial logic
-    alert(`Deny timesheet: ${id}`);
+  const handleDenyTimesheet = async (id: string) => {
+    const comments = prompt('Please provide a reason for rejection:');
+    if (!comments) return;
+    try {
+      const response = await fetch(`/api/hr/timesheets/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comments }),
+      });
+      if (!response.ok) throw new Error('Failed to reject timesheet');
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/approvals'] });
+      handleRefresh();
+    } catch (error) {
+      alert('Failed to reject timesheet. Please try again.');
+    }
   };
 
-  const handleApproveLeaveRequest = (id: string) => {
-    // TODO: Implement approval logic
-    alert(`Approve leave request: ${id}`);
+  const handleApproveLeaveRequest = async (id: string) => {
+    try {
+      const response = await fetch(`/api/hr/leave/requests/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!response.ok) throw new Error('Failed to approve leave request');
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/leave/requests'] });
+      handleRefresh();
+    } catch (error) {
+      alert('Failed to approve leave request. Please try again.');
+    }
   };
 
-  const handleDenyLeaveRequest = (id: string) => {
-    // TODO: Implement denial logic
-    alert(`Deny leave request: ${id}`);
+  const handleDenyLeaveRequest = async (id: string) => {
+    const comments = prompt('Please provide a reason for rejection:');
+    if (!comments) return;
+    try {
+      const response = await fetch(`/api/hr/leave/requests/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comments }),
+      });
+      if (!response.ok) throw new Error('Failed to reject leave request');
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hr/leave/requests'] });
+      handleRefresh();
+    } catch (error) {
+      alert('Failed to reject leave request. Please try again.');
+    }
   };
 
-  const handleViewApprovalDetails = (type: 'timesheet' | 'leave', id: string) => {
-    // TODO: Navigate to details page
-    alert(`View ${type} details: ${id}`);
+  const handleViewApprovalDetails = (type: 'timesheet' | 'leave', _id: string) => {
+    // Details are shown inline in the ApprovalsCard
   };
 
   if (summaryError) {

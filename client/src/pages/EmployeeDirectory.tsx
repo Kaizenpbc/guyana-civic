@@ -117,8 +117,8 @@ export default function EmployeeDirectory() {
   };
 
   const handleEditEmployee = (id: string) => {
-    // TODO: Navigate to employee edit page
-    alert(`Edit employee: ${id}`);
+    // Open employee details view (edit form not yet implemented)
+    handleViewEmployeeDetails(id);
   };
 
   const clearFilters = () => {
