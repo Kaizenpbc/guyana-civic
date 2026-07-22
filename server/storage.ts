@@ -25,7 +25,7 @@ import {
   type InsertIssue,
   type Announcement,
   type InsertAnnouncement
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { randomUUID } from "crypto";
 
 // modify the interface with any CRUD methods

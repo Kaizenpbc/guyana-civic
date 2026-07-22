@@ -22,7 +22,13 @@ import NotFound from "@/pages/NotFound";
 import BarimaMemorial from "@/pages/BarimaMemorial";
 import React from "react";
 
+const isMemorialSubdomain = window.location.hostname.startsWith("memorial.");
+
 function Router() {
+  if (isMemorialSubdomain) {
+    return <BarimaMemorial />;
+  }
+
   return (
     <Switch>
       <Route path="/" component={HomePage} />

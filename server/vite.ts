@@ -1,12 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
-import { nanoid } from "nanoid";
-
-const viteLogger = createLogger();
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -20,6 +15,13 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  // Dynamic imports — vite is a devDependency, only available in development
+  const viteModule = await import("vite");
+  const createViteServer = viteModule.createServer;
+  const viteLogger = viteModule.createLogger();
+  const viteConfig = (await import("../vite.config")).default;
+  const { nanoid } = await import("nanoid");
+
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -68,7 +70,12 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "..", "dist", "public");
+  // When running from dist/server/, public files are at dist/public/ (sibling directory)
+  // When running from server/, public files are at dist/public/ (from project root)
+  let distPath = path.resolve(import.meta.dirname, "..", "public");
+  if (!fs.existsSync(distPath)) {
+    distPath = path.resolve(import.meta.dirname, "..", "dist", "public");
+  }
 
   if (!fs.existsSync(distPath)) {
     throw new Error(

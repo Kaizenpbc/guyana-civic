@@ -9,7 +9,7 @@ import {
   ProjectMilestone,
   ProjectCitizenUpdate,
   ProjectFeedback,
-} from "../shared/project-tracker-types";
+} from "../shared/project-tracker-types.js";
 
 // Authentication middleware (reuse from main app)
 const requireAuth = (req: any, res: any, next: any) => {

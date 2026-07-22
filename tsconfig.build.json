@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "allowImportingTsExtensions": false,
+    "declaration": false,
+    "sourceMap": false,
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "paths": {}
+  },
+  "include": ["server/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx"]
+}

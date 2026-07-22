@@ -1,5 +1,5 @@
 import { eq, and, desc, asc, sql, ilike, or, lte, gte } from "drizzle-orm";
-import { db } from "./db";
+import { db } from "./db.js";
 import {
   users,
   jurisdictions,
@@ -12,7 +12,7 @@ import {
   leaveBalances,
   leaveRequests,
   projects,
-} from "@shared/schema";
+} from "../shared/schema.js";
 import type {
   User,
   InsertUser,
@@ -38,8 +38,8 @@ import type {
   DirectoryFilters,
   DirectoryResponse,
   OrgChartNode,
-} from "@shared/schema";
-import type { IStorage } from "./storage";
+} from "../shared/schema.js";
+import type { IStorage } from "./storage.js";
 import { randomUUID } from "crypto";
 
 export class DatabaseStorage implements IStorage {

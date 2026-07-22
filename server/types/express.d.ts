@@ -1,4 +1,4 @@
-import type { userRoleEnum } from "@shared/schema";
+import type { userRoleEnum } from "../../shared/schema";
 
 // Define user claims interface for authentication
 export interface UserClaims {

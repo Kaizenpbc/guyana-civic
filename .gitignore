@@ -91,6 +91,9 @@ jspm_packages/
 .DS_Store
 Thumbs.db
 
+# User uploads
+uploads/
+
 # Credentials & sensitive files
 cookies.txt
 test-login.json

@@ -1,18 +1,18 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import {
   insertTimesheetSchema,
   insertTimesheetEntrySchema,
   insertLeaveRequestSchema,
   directoryFiltersSchema
-} from "@shared/schema";
+} from "../shared/schema.js";
 import session from "express-session";
-import { registerProjectTrackerRoutes } from "./project-tracker-routes";
-import { registerPMToolRoutes } from "./pm-tool-routes";
-import riskManagementRoutes, { getRisksForProject, getIssuesForProject, getActionsForProject } from "./risk-management-routes";
-import notificationRoutes from "./notification-routes";
-import memorialRoutes from "./memorial-routes";
+import { registerProjectTrackerRoutes } from "./project-tracker-routes.js";
+import { registerPMToolRoutes } from "./pm-tool-routes.js";
+import riskManagementRoutes, { getRisksForProject, getIssuesForProject, getActionsForProject } from "./risk-management-routes.js";
+import notificationRoutes from "./notification-routes.js";
+import memorialRoutes from "./memorial-routes.js";
 import bcrypt from "bcryptjs";
 
 // Authentication middleware

@@ -5,8 +5,11 @@ import fs from "fs";
 
 const router = Router();
 
-// Ensure uploads directory exists
-const uploadsDir = path.resolve(import.meta.dirname, "..", "uploads", "memorial");
+// Ensure uploads directory exists — resolve to project root regardless of running from server/ or dist/server/
+const projectRoot = import.meta.dirname.endsWith(path.join("dist", "server"))
+  ? path.resolve(import.meta.dirname, "..", "..")
+  : path.resolve(import.meta.dirname, "..");
+const uploadsDir = path.resolve(projectRoot, "uploads", "memorial");
 fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Configure multer for photo uploads
