@@ -99,23 +99,21 @@ export default function RDCPortal({ params }: RDCPortalProps) {
   };
 
   const handleReportIssue = () => {
-    // TODO: Implement report issue modal
-    alert('Report issue feature coming soon!');
+    setLocation(`/jurisdiction/${id}`);
   };
 
   const handleTrackRequests = () => {
-    // TODO: Implement track requests page
-    alert('Track requests feature coming soon!');
+    setLocation(`/jurisdiction/${id}`);
   };
 
   const handleContactRDC = () => {
-    // TODO: Implement contact form
-    alert('Contact form coming soon!');
+    if (jurisdiction?.contactEmail) {
+      window.location.href = `mailto:${jurisdiction.contactEmail}`;
+    }
   };
 
   const handleViewAnnouncements = () => {
-    // TODO: Implement announcements page
-    alert('Announcements page coming soon!');
+    setLocation(`/jurisdiction/${id}`);
   };
 
   if (jurisdictionLoading) {

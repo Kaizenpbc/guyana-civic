@@ -68,23 +68,19 @@ const Region2Portal = () => {
   };
 
   const handleReportIssue = () => {
-    // TODO: Implement report issue modal
-    alert('Report issue feature coming soon!');
+    setLocation('/jurisdiction/region-2');
   };
 
   const handleTrackRequests = () => {
-    // TODO: Implement track requests page
-    alert('Track requests feature coming soon!');
+    setLocation('/jurisdiction/region-2');
   };
 
   const handleContactRDC = () => {
-    // TODO: Implement contact form
-    alert('Contact form coming soon!');
+    window.location.href = 'mailto:region2@gov.gy';
   };
 
   const handleViewAnnouncements = () => {
-    // TODO: Implement announcements page
-    alert('Announcements page coming soon!');
+    setLocation('/jurisdiction/region-2');
   };
 
   const renderServices = () => {

@@ -74,6 +74,7 @@ const fetchAnnouncements = async (jurisdictionId: string): Promise<Announcement[
 
 export default function JurisdictionPortal({ params }: { params?: { id: string } }) {
   const [showReportForm, setShowReportForm] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -105,19 +106,12 @@ export default function JurisdictionPortal({ params }: { params?: { id: string }
   };
 
   const handleViewIssue = (id: string) => {
-    // TODO: Implement issue details modal/page
-    alert(`View issue details for: ${id}`);
+    const issue = issues.find(i => i.id === id);
+    if (issue) setSelectedIssue(issue);
   };
 
-  const handleSubmitIssue = (issueData: {
-    title: string;
-    description: string;
-    category: string;
-    priority: string;
-    location: string;
-  }) => {
-    // TODO: Implement issue submission to API
-    alert('Issue submitted successfully!');
+  const handleSubmitIssue = () => {
+    // IssueReportForm handles the API call internally via useMutation
     setShowReportForm(false);
   };
 
@@ -127,6 +121,84 @@ export default function JurisdictionPortal({ params }: { params?: { id: string }
                          issue.location.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
+
+  if (selectedIssue) {
+    const statusColor: Record<string, string> = {
+      submitted: "bg-blue-100 text-blue-800",
+      acknowledged: "bg-purple-100 text-purple-800",
+      in_progress: "bg-yellow-100 text-yellow-800",
+      resolved: "bg-green-100 text-green-800",
+      closed: "bg-gray-100 text-gray-800",
+    };
+    const priorityColor: Record<string, string> = {
+      low: "bg-green-100 text-green-800",
+      medium: "bg-yellow-100 text-yellow-800",
+      high: "bg-orange-100 text-orange-800",
+      urgent: "bg-red-100 text-red-800",
+    };
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-6 py-4">
+            <Button variant="ghost" onClick={() => setSelectedIssue(null)} className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Issues
+            </Button>
+          </div>
+        </header>
+        <div className="container mx-auto px-6 py-8 max-w-3xl">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">{selectedIssue.title}</CardTitle>
+                <div className="flex gap-2">
+                  <Badge className={priorityColor[selectedIssue.priority] || ""}>
+                    {selectedIssue.priority}
+                  </Badge>
+                  <Badge className={statusColor[selectedIssue.status] || ""}>
+                    {selectedIssue.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                <p>{selectedIssue.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Category</h3>
+                  <p className="capitalize">{selectedIssue.category}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Location</h3>
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedIssue.location}</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Reported</h3>
+                  <p>{new Date(selectedIssue.createdAt).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Last Updated</h3>
+                  <p>{new Date(selectedIssue.updatedAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+              {selectedIssue.resolutionNotes && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Resolution Notes</h3>
+                  <p>{selectedIssue.resolutionNotes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (showReportForm) {
     return (

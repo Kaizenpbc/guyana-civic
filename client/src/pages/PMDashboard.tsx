@@ -101,6 +101,7 @@ const PMDashboard: React.FC = () => {
   // Risk Management state
   const [showRiskManagement, setShowRiskManagement] = useState(false);
   const [selectedProjectForRisk, setSelectedProjectForRisk] = useState<any>(null);
+  const [riskManagementInitialTab, setRiskManagementInitialTab] = useState<'risk' | 'issue' | 'decision' | 'action'>('risk');
   const [showRAIDDashboard, setShowRAIDDashboard] = useState(false);
   const [selectedProjectForRAID, setSelectedProjectForRAID] = useState<any>(null);
   const [showSmartIssueEscalation, setShowSmartIssueEscalation] = useState(false);
@@ -302,11 +303,10 @@ const PMDashboard: React.FC = () => {
   };
 
   const handleRAIDAddNew = (type: 'risk' | 'issue' | 'decision' | 'action') => {
-    // Close RAID dashboard and open the appropriate form
     setShowRAIDDashboard(false);
     setSelectedProjectForRisk(selectedProjectForRAID);
+    setRiskManagementInitialTab(type);
     setShowRiskManagement(true);
-    // TODO: Set the active tab in RiskManagementForms to the correct type
   };
 
   const handleGetAISuggestions = (project: any) => {
@@ -367,8 +367,10 @@ const PMDashboard: React.FC = () => {
     // Could trigger notifications or other actions here
   };
 
-  const handleAcceptRiskSuggestion = (suggestion: any) => {
-    // Create a risk from the suggestion
+  const handleAcceptRiskSuggestion = async (suggestion: any) => {
+    const projectId = selectedProjectForSmartSuggestions?.id;
+    if (!projectId) return;
+
     const newRisk = {
       title: suggestion.title,
       description: suggestion.description,
@@ -381,14 +383,21 @@ const PMDashboard: React.FC = () => {
       contingency_plan: suggestion.contingency_plan,
       owner_id: authData?.user?.id,
       assigned_to: authData?.user?.id,
-      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     };
 
-    // TODO: Call API to create the risk
-    console.log('Creating risk from suggestion:', newRisk);
-    
-    // Show success message
-    alert(`Risk "${suggestion.title}" has been added to your project!`);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/risks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRisk),
+      });
+      if (!response.ok) throw new Error('Failed to create risk');
+      alert(`Risk "${suggestion.title}" has been added to your project!`);
+    } catch (error) {
+      console.error('Error creating risk:', error);
+      alert('Failed to create risk. Please try again.');
+    }
   };
 
   const handleRejectRiskSuggestion = (suggestionId: string) => {
@@ -2439,6 +2448,7 @@ const PMDashboard: React.FC = () => {
           projectId={selectedProjectForRisk?.id}
           project={selectedProjectForRisk}
           projects={projectsData?.projects || []}
+          initialTab={riskManagementInitialTab}
           onClose={handleRiskManagementClose}
           onSuccess={handleRiskManagementSuccess}
         />

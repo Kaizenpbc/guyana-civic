@@ -27,18 +27,20 @@ interface RiskManagementFormsProps {
   projectId?: string;
   project?: any;
   projects?: any[];
+  initialTab?: 'risk' | 'issue' | 'decision' | 'action';
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({ 
-  projectId, 
+const RiskManagementForms: React.FC<RiskManagementFormsProps> = ({
+  projectId,
   project,
   projects = [],
-  onClose, 
-  onSuccess 
+  initialTab = 'risk',
+  onClose,
+  onSuccess
 }) => {
-  const [activeTab, setActiveTab] = useState<'risk' | 'issue' | 'decision' | 'action'>('risk');
+  const [activeTab, setActiveTab] = useState<'risk' | 'issue' | 'decision' | 'action'>(initialTab);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
   const [selectedProject, setSelectedProject] = useState<any>(project);
