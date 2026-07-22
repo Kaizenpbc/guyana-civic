@@ -69,10 +69,23 @@ interface EmployeeSummary {
 export default function EmployeeDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Fetch current user data
+  const { data: authData } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/me');
+      if (!response.ok) throw new Error('Not authenticated');
+      return response.json() as Promise<{ user: { fullName: string; email: string } }>;
+    },
+  });
+
+  const userName = authData?.user?.fullName || "Employee";
+  const userEmail = authData?.user?.email || "";
+
   // Fetch employee summary data
-  const { 
-    data: summary, 
-    isLoading: isSummaryLoading, 
+  const {
+    data: summary,
+    isLoading: isSummaryLoading,
     error: summaryError,
     refetch: refetchSummary
   } = useQuery({
@@ -238,10 +251,10 @@ export default function EmployeeDashboard() {
             ) : summary?.employee ? (
               <EmployeeCard
                 id={summary.employee.id}
-                fullName="John Doe" // TODO: Get from user data
+                fullName={userName}
                 position={summary.employee.position}
                 department={summary.employee.department}
-                email="john.doe@city.gov" // TODO: Get from user data
+                email={userEmail}
                 hireDate={summary.employee.hireDate}
                 salary={summary.employee.salary}
                 isActive={summary.employee.isActive}
@@ -265,7 +278,7 @@ export default function EmployeeDashboard() {
                 regularHours={parseFloat(summary.currentTimesheet.regularHours)}
                 overtimeHours={parseFloat(summary.currentTimesheet.overtimeHours)}
                 status={summary.currentTimesheet.status}
-                employeeName="John Doe" // TODO: Get from user data
+                employeeName={userName}
                 entries={summary.currentTimesheet.entries.map(entry => ({
                   date: entry.workDate,
                   hoursWorked: parseFloat(entry.hoursWorked),

@@ -334,7 +334,7 @@ export default function JurisdictionPortal({ params }: { params?: { id: string }
                       priority={issue.priority}
                       status={issue.status}
                       location={issue.location}
-                      citizenName="Citizen" // TODO: Get from user data
+                      citizenName="Community Member"
                       createdAt={issue.createdAt}
                       onView={handleViewIssue} 
                     />
@@ -366,7 +366,7 @@ export default function JurisdictionPortal({ params }: { params?: { id: string }
                   id={announcement.id}
                   title={announcement.title}
                   content={announcement.content}
-                  authorName="City Works Department" // TODO: Get from user data
+                  authorName={jurisdiction?.name || "Administration"}
                   createdAt={announcement.createdAt}
                   isActive={announcement.isActive}
                 />
