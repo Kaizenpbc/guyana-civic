@@ -12,6 +12,7 @@ import { registerProjectTrackerRoutes } from "./project-tracker-routes";
 import { registerPMToolRoutes } from "./pm-tool-routes";
 import riskManagementRoutes, { getRisksForProject, getIssuesForProject, getActionsForProject } from "./risk-management-routes";
 import notificationRoutes from "./notification-routes";
+import memorialRoutes from "./memorial-routes";
 import bcrypt from "bcryptjs";
 
 // Authentication middleware
@@ -3294,6 +3295,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Notification routes
   app.use(notificationRoutes);
+
+  // Memorial page (public, no auth)
+  app.use(memorialRoutes);
 
   const httpServer = createServer(app);
 

@@ -19,6 +19,7 @@ import MinisterialDashboard from "@/pages/MinisterialDashboard";
 import ProjectPage from "@/pages/ProjectPage";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
+import BarimaMemorial from "@/pages/BarimaMemorial";
 import React from "react";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/admin/dashboard" component={StaffDashboard} />
       <Route path="/ministerial/dashboard" component={MinisterialDashboard} />
       <Route path="/project/:id" component={({ params }: { params: { id: string } }) => <ProjectPage projectId={params.id} />} />
+      <Route path="/barima-memorial" component={BarimaMemorial} />
       <Route path="/unauthorized" component={Unauthorized} />
       <Route component={NotFound} />
     </Switch>
