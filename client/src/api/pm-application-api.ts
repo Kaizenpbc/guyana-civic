@@ -17,24 +17,46 @@ export interface ProjectSchedule {
   created_at: string;
   updated_at: string;
   created_by: string;
+  selectedPhases?: any[];
+  selectedDocuments?: any[];
 }
 
 export interface ScheduleTask {
   id: string;
-  schedule_id: string;
+  schedule_id?: string;
   parent_task_id?: string;
   name: string;
-  description: string;
-  type: 'phase' | 'summary' | 'task' | 'milestone' | 'document';
-  status: 'not-started' | 'in-progress' | 'completed' | 'on-hold' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  description?: string;
+  type?: 'phase' | 'summary' | 'task' | 'milestone' | 'document';
+  status: string;
+  priority?: string;
   start_date?: string;
   end_date?: string;
   estimated_hours?: number;
   actual_hours?: number;
-  progress_percentage: number;
+  progress_percentage?: number;
   assigned_to?: string;
   dependencies?: string[];
+  // camelCase aliases used throughout the application
+  parentTaskId?: string | null;
+  startDate?: string;
+  endDate?: string;
+  estimatedHours?: number;
+  actualHours?: number;
+  assignedTo?: string | null;
+  progress?: number;
+  subtasks?: ScheduleTask[];
+  // Additional fields used in project views
+  taskType?: string;
+  estimatedDays?: number;
+  dependency?: string;
+  actualStartDate?: string;
+  projectedFinishDate?: string;
+  workEffort?: string;
+  assignedResource?: string;
+  risks?: string;
+  issues?: string;
+  comments?: string;
 }
 
 export interface ScheduleTemplate {

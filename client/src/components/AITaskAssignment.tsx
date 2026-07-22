@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 interface AITaskAssignmentProps {
-  projectId: string;
+  projectId?: string;
 }
 
 interface AITask {

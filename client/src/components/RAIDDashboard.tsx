@@ -22,6 +22,9 @@ import {
 
 interface RAIDDashboardProps {
   projectId: string;
+  projectName?: string;
+  onClose?: () => void;
+  onAddNew?: (type: "action" | "risk" | "issue" | "decision") => void;
 }
 
 interface RAIDItem {

@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { 
-  insertTimesheetSchema, 
+import {
+  insertTimesheetSchema,
   insertTimesheetEntrySchema,
   insertLeaveRequestSchema,
   directoryFiltersSchema
@@ -12,6 +12,7 @@ import { registerProjectTrackerRoutes } from "./project-tracker-routes";
 import { registerPMToolRoutes } from "./pm-tool-routes";
 import riskManagementRoutes from "./risk-management-routes";
 import notificationRoutes from "./notification-routes";
+import bcrypt from "bcryptjs";
 
 // Authentication middleware
 const requireAuth = (req: any, res: any, next: any) => {
@@ -51,12 +52,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if users already exist
       const existingUser = await storage.getUserByUsername("pm");
       if (!existingUser) {
+        const defaultPassword = await bcrypt.hash("password", 10);
+
         // Create default PM user
         await storage.createUser({
           username: "pm",
           email: "pm@guyana.gov",
           fullName: "Project Manager",
-          password: "password", // In real app, this would be hashed
+          password: defaultPassword,
           role: "pm",
           jurisdictionId: "jurisdiction-1",
           phone: "+592-123-4567"
@@ -67,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: "rdc_manager",
           email: "rdc@guyana.gov",
           fullName: "RDC Senior Manager",
-          password: "password",
+          password: defaultPassword,
           role: "rdc_manager",
           jurisdictionId: "jurisdiction-1",
           phone: "+592-123-4568"
@@ -78,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: "minister",
           email: "minister@guyana.gov",
           fullName: "Minister of Local Government",
-          password: "password",
+          password: defaultPassword,
           role: "minister",
           jurisdictionId: "jurisdiction-1",
           phone: "+592-123-4569"
@@ -103,13 +106,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Username and password required" });
       }
       
-      // Simple demo authentication - in real app, hash passwords and check database
       const user = await storage.getUserByUsername(username);
       if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      
-      // For demo, accept any password. In real app, verify password hash
+
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
       req.session.user = {
         id: user.id,
         username: user.username,
@@ -523,8 +529,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate AI-powered risk suggestions based on project type
       const suggestions = [];
 
-      // Context-aware suggestions based on project category
-      if (project.category === "infrastructure" || project.category === "building_construction") {
+      // Context-aware suggestions based on project department
+      const projectCategory = (project as any).category || project.department;
+      if (projectCategory === "infrastructure" || projectCategory === "building_construction" || project.department === "Public Works") {
         suggestions.push({
           id: "weather-delays",
           title: "Weather Delays and Seasonal Impact",
@@ -554,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (project.category === "education" || project.category === "school_construction") {
+      if (projectCategory === "education" || projectCategory === "school_construction") {
         suggestions.push({
           id: "stakeholder-coordination",
           title: "Stakeholder Coordination Challenges",

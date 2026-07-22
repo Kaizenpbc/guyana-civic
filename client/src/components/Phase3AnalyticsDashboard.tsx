@@ -409,7 +409,7 @@ const Phase3AnalyticsDashboard: React.FC = () => {
 
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-900">Budget by Category</h4>
-                {analyticsData.budgetAnalytics.budgetCategories.map((category, index) => (
+                {analyticsData.budgetAnalytics.budgetCategories.map((category: any, index: number) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium text-gray-900">{category.category}</p>

@@ -7,12 +7,12 @@ export interface Project {
   jurisdictionId: string; // Primary jurisdiction (for backward compatibility)
   name: string;
   description: string;
-  category: 'infrastructure' | 'health' | 'education' | 'agriculture' | 'environment' | 'social' | 'economic';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  
+  category: 'infrastructure' | 'health' | 'healthcare' | 'education' | 'agriculture' | 'environment' | 'social' | 'economic' | 'recreation' | 'unknown';
+  priority: 'low' | 'medium' | 'high' | 'urgent' | 'critical';
+
   // Project Scope & Funding
-  scope: 'local' | 'regional' | 'national';
-  fundingSource: 'local' | 'regional' | 'national' | 'international';
+  scope: 'local' | 'regional' | 'national' | 'unknown';
+  fundingSource: 'local' | 'regional' | 'national' | 'international' | 'unknown';
   
   // Budget Management
   budgetAllocated: number;
@@ -168,6 +168,8 @@ export interface CreateProjectRequest {
   budgetAllocated: number;
   plannedStartDate: string;
   plannedEndDate: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
   projectManagerId?: string;
   isPublic?: boolean;
   publicDescription?: string;

@@ -268,12 +268,12 @@ const SmartRiskSuggestions: React.FC<SmartRiskSuggestionsProps> = ({
   }, [projectCategory, projectType]);
 
   const handleAcceptSuggestion = (suggestion: RiskSuggestion) => {
-    setAcceptedSuggestions(prev => new Set([...prev, suggestion.id]));
+    setAcceptedSuggestions(prev => new Set([...Array.from(prev), suggestion.id]));
     onAcceptSuggestion(suggestion);
   };
 
   const handleRejectSuggestion = (suggestionId: string) => {
-    setRejectedSuggestions(prev => new Set([...prev, suggestionId]));
+    setRejectedSuggestions(prev => new Set([...Array.from(prev), suggestionId]));
     onRejectSuggestion(suggestionId);
   };
 

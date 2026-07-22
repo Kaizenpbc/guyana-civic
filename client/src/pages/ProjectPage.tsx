@@ -39,7 +39,7 @@ import {
   X,
   LogOut
 } from 'lucide-react';
-import { ProjectTable } from '@/components/ProjectTable';
+import ProjectTable from '@/components/ProjectTable';
 import RAIDDashboard from '@/components/RAIDDashboard';
 import AdvancedAnalytics from '@/components/AdvancedAnalytics';
 import ProjectHealthScoreCard from '@/components/ProjectHealthScoreCard';
@@ -114,7 +114,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [templates, setTemplates] = useState<ScheduleTemplate[]>([]);
-  const [checklistTemplates, setChecklistTemplates] = useState<PMChecklistTemplate[]>([]);
+  const [checklistTemplates, setChecklistTemplates] = useState<any[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [projectSettings, setProjectSettings] = useState({
     name: '',
@@ -282,8 +282,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
         const newSchedule = await createSchedule(projectId, {
           name: "Current Project Schedule",
           description: "Active project schedule",
-          templateId: "building-construction",
-          templateName: "Building Construction"
+          templateId: "building-construction"
         });
         setCurrentSchedule(newSchedule);
         console.log('New schedule created:', newSchedule);
@@ -350,7 +349,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
       console.log('⏰ Timestamp:', timestamp);
       
       // Create summary tasks (phases) and their subtasks
-      selectedPhases.forEach((phase, phaseIndex) => {
+      selectedPhases.forEach((phase: any, phaseIndex: number) => {
         console.log(`🔄 Processing phase ${phaseIndex}:`, phase);
         const phaseId = `phase-${phase.id}-${timestamp}`;
         const phaseStartDate = new Date(Date.now() + phaseIndex * 30 * 24 * 60 * 60 * 1000);
@@ -381,7 +380,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
         if (phase.tasks && phase.tasks.length > 0) {
           console.log(`📋 Using ${phase.tasks.length} tasks from template for ${phase.name}`);
           
-          phase.tasks.forEach((templateTask, taskIndex) => {
+          phase.tasks.forEach((templateTask: any, taskIndex: number) => {
             const taskStartDate = new Date(phaseStartDate.getTime() + taskIndex * 10 * 24 * 60 * 60 * 1000);
             const taskEndDate = new Date(taskStartDate.getTime() + 10 * 24 * 60 * 60 * 1000);
             
@@ -455,7 +454,7 @@ export default function ProjectPage({ projectId }: ProjectPageProps) {
       });
 
       // Create document tasks for each selected document
-      selectedDocuments.forEach((document, docIndex) => {
+      selectedDocuments.forEach((document: any, docIndex: number) => {
         const docStartDate = new Date(Date.now() + (selectedPhases.length * 30 + docIndex * 7) * 24 * 60 * 60 * 1000);
         const docEndDate = new Date(docStartDate.getTime() + 7 * 24 * 60 * 60 * 1000);
         

@@ -72,14 +72,13 @@ const fetchAnnouncements = async (jurisdictionId: string): Promise<Announcement[
   return response.json();
 };
 
-export default function JurisdictionPortal() {
+export default function JurisdictionPortal({ params }: { params?: { id: string } }) {
   const [showReportForm, setShowReportForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  
-  // Get jurisdiction ID from URL (for now, default to metro-central)
-  const jurisdictionId = "metro-central"; // TODO: Get from URL params
+
+  const jurisdictionId = params?.id || "region-1";
   
   // Fetch jurisdiction data
   const { data: jurisdiction, isLoading: jurisdictionLoading, error: jurisdictionError } = useQuery({

@@ -28,7 +28,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/rdc/region-2" component={Region2Portal} />
       <Route path="/rdc/:id" component={RDCPortal} />
-      <Route path="/jurisdiction/:id" component={JurisdictionPortal} />
+      <Route path="/jurisdiction/:id" component={({ params }: { params: { id: string } }) => <JurisdictionPortal params={params} />} />
       <Route path="/staff/dashboard" component={StaffDashboard} />
       <Route path="/staff/directory" component={EmployeeDirectory} />
       <Route path="/pm/dashboard" component={PMDashboard} />

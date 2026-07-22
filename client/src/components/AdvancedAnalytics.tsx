@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 
 interface AdvancedAnalyticsProps {
-  projectId: string;
+  projectId?: string;
+  projects?: any[];
+  onClose?: () => void;
 }
 
 interface AnalyticsData {

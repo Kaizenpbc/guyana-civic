@@ -36,11 +36,12 @@ interface RDCRiskPattern {
   trend: 'increasing' | 'stable' | 'decreasing';
 }
 
+
 interface RDCResourceConflict {
   id: string;
   resourceType: string;
   description: string;
-  severity: 'Low' | 'Medium' | 'High';
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
   affectedPMs: string[];
   affectedProjects: string[];
   resolutionCost: number;

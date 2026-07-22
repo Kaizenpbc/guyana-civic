@@ -5,8 +5,11 @@ import { Phone, Mail } from "lucide-react";
 interface JurisdictionCardProps {
   id: string;
   name: string;
+  description?: string;
   contactEmail?: string;
   contactPhone?: string;
+  address?: string;
+  issueCount?: number;
   onSelect: (id: string) => void;
 }
 

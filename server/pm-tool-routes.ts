@@ -9,6 +9,9 @@ const requireAuth = (req: any, res: any, next: any) => {
   next();
 };
 
+// Non-null helper for routes behind requireAuth middleware
+const getUser = (req: any) => req.user!;
+
 const requirePM = (req: any, res: any, next: any) => {
   if (!req.user || !["pm", "admin", "super_admin"].includes(req.user.role)) {
     return res.status(403).json({ error: "PM access required" });
@@ -158,7 +161,7 @@ export function registerPMToolRoutes(app: Express) {
           progressPercentage: 20,
           createdAt: "2024-01-15T10:00:00Z",
           updatedAt: "2024-01-20T14:30:00Z",
-          createdBy: req.user.id
+          createdBy: req.user!.id
         }
       ];
 
@@ -226,7 +229,7 @@ export function registerPMToolRoutes(app: Express) {
         progressPercentage: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        createdBy: req.user.id
+        createdBy: req.user!.id
       };
 
       // Store the schedule in memory
@@ -268,7 +271,7 @@ export function registerPMToolRoutes(app: Express) {
         progressPercentage: 20,
         createdAt: "2024-01-15T10:00:00Z",
         updatedAt: new Date().toISOString(),
-        createdBy: req.user.id,
+        createdBy: req.user!.id,
         ...updateData
       };
 
@@ -419,7 +422,7 @@ export function registerPMToolRoutes(app: Express) {
           actualStartDate: "2024-01-15",
           actualEndDate: "2024-01-15",
           dependsOnTasks: [],
-          assignedTo: req.user.id,
+          assignedTo: req.user!.id,
           requiredSkills: ["Communication", "Stakeholder Management"],
           deliverables: ["Meeting Minutes", "Stakeholder Agreement"],
           status: "completed",
@@ -449,7 +452,7 @@ export function registerPMToolRoutes(app: Express) {
           actualStartDate: "2024-01-15",
           actualEndDate: "2024-01-15",
           dependsOnTasks: [],
-          assignedTo: req.user.id,
+          assignedTo: req.user!.id,
           requiredSkills: ["Scheduling", "Communication"],
           deliverables: ["Meeting Schedule"],
           status: "completed",
@@ -473,7 +476,7 @@ export function registerPMToolRoutes(app: Express) {
           actualStartDate: "2024-01-16",
           actualEndDate: "2024-01-17",
           dependsOnTasks: [`task-${scheduleId}-1`],
-          assignedTo: req.user.id,
+          assignedTo: req.user!.id,
           requiredSkills: ["Surveying", "Environmental Assessment"],
           deliverables: ["Site Survey Report", "Environmental Assessment"],
           status: "completed",
@@ -518,7 +521,7 @@ export function registerPMToolRoutes(app: Express) {
         actualStartDate: "2024-01-15",
         actualEndDate: "2024-01-16",
         dependsOnTasks: [],
-        assignedTo: req.user.id,
+        assignedTo: req.user!.id,
         requiredSkills: ["Updated Skills"],
         deliverables: ["Updated Deliverables"],
         status: "in_progress",
@@ -555,7 +558,7 @@ export function registerPMToolRoutes(app: Express) {
         description: description || "Click to edit description",
         estimatedHours: estimatedHours || 4,
         dependsOnTasks: [],
-        assignedTo: req.user.id,
+        assignedTo: req.user!.id,
         requiredSkills: ["TBD"],
         deliverables: ["TBD"],
         status: "not_started",
@@ -762,7 +765,7 @@ export function registerPMToolRoutes(app: Express) {
           oldValues: null,
           newValues: { name: "Main Project Schedule", status: "draft" },
           changeSummary: "Schedule created from Building Construction template",
-          changedBy: req.user.id,
+          changedBy: req.user!.id,
           changedAt: "2024-01-15T10:00:00Z"
         },
         {
@@ -774,7 +777,7 @@ export function registerPMToolRoutes(app: Express) {
           oldValues: null,
           newValues: { name: "Stakeholder meeting", estimatedHours: 6 },
           changeSummary: "Added Stakeholder meeting task",
-          changedBy: req.user.id,
+          changedBy: req.user!.id,
           changedAt: "2024-01-15T10:30:00Z"
         }
       ];

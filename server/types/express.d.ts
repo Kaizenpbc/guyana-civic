@@ -3,7 +3,11 @@ import type { userRoleEnum } from "@shared/schema";
 // Define user claims interface for authentication
 export interface UserClaims {
   id: string;
+  username: string;
+  email: string;
+  fullName: string;
   role: typeof userRoleEnum._def.values[number];
+  jurisdictionId?: string;
   employeeId?: string;
 }
 

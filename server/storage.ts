@@ -341,10 +341,13 @@ export class MemStorage implements IStorage {
     announcements.forEach(announcement => this.announcements.set(announcement.id, announcement));
 
     // Create sample users
+    // bcrypt hash of "password" with 10 rounds (pre-computed for startup speed)
+    const hashedPassword = "$2a$10$rS5KYcOFnGkE5Z5uK5v5/.q3BBXDG0KdNmX3GqM4F2dYUcaHbfMWy";
     const users: User[] = [
       {
         id: "user-1",
         username: "jdoe",
+        password: hashedPassword,
         email: "john.doe@city.gov",
         fullName: "John Doe",
         phone: "+1 (555) 123-4567",
@@ -356,6 +359,7 @@ export class MemStorage implements IStorage {
       {
         id: "user-2",
         username: "ssmith",
+        password: hashedPassword,
         email: "sarah.smith@city.gov",
         fullName: "Sarah Smith",
         phone: "+1 (555) 234-5678",
@@ -367,6 +371,7 @@ export class MemStorage implements IStorage {
       {
         id: "user-3",
         username: "mwilson",
+        password: hashedPassword,
         email: "mike.wilson@city.gov",
         fullName: "Mike Wilson",
         phone: "+1 (555) 345-6789",
@@ -378,6 +383,7 @@ export class MemStorage implements IStorage {
       {
         id: "user-4",
         username: "ljohnson",
+        password: hashedPassword,
         email: "lisa.johnson@city.gov",
         fullName: "Lisa Johnson",
         phone: "+1 (555) 456-7890",
@@ -389,6 +395,7 @@ export class MemStorage implements IStorage {
       {
         id: "user-5",
         username: "rbrown",
+        password: hashedPassword,
         email: "robert.brown@city.gov",
         fullName: "Robert Brown",
         phone: "+1 (555) 567-8901",
@@ -400,6 +407,7 @@ export class MemStorage implements IStorage {
       {
         id: "user-6",
         username: "PM",
+        password: hashedPassword,
         email: "pm@city.gov",
         fullName: "Project Manager",
         phone: "+1 (555) 678-9012",
@@ -411,6 +419,7 @@ export class MemStorage implements IStorage {
       {
         id: "user-7",
         username: "rdc_manager",
+        password: hashedPassword,
         email: "rdc@region2.gov.gy",
         fullName: "RDC Senior Manager",
         phone: "+592 777-5678",
@@ -422,6 +431,7 @@ export class MemStorage implements IStorage {
       {
         id: "user-8",
         username: "minister",
+        password: hashedPassword,
         email: "minister@gov.gy",
         fullName: "Minister of Public Works",
         phone: "+592 226-1234",
@@ -642,10 +652,11 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { 
+    const user: User = {
       ...insertUser,
-      id, 
+      id,
       createdAt: new Date(),
+      password: insertUser.password,
       role: insertUser.role || "citizen",
       jurisdictionId: insertUser.jurisdictionId || null,
       isActive: insertUser.isActive ?? true,
@@ -1416,4 +1427,15 @@ export class MemStorage implements IStorage {
 
 }
 
-export const storage = new MemStorage();
+// Use DatabaseStorage when DATABASE_URL is set, otherwise fall back to MemStorage
+function createStorage(): IStorage {
+  if (process.env.DATABASE_URL) {
+    console.log("Using DatabaseStorage (PostgreSQL)");
+    const { DatabaseStorage } = require("./db-storage");
+    return new DatabaseStorage();
+  }
+  console.log("Using MemStorage (in-memory) - set DATABASE_URL for persistent storage");
+  return new MemStorage();
+}
+
+export const storage = createStorage();

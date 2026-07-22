@@ -511,6 +511,7 @@ export function registerProjectTrackerRoutes(app: Express) {
           updatedAt: '2024-10-15T10:30:00Z',
           projectManagerId: 'pm-001',
           assignedTo: 'user-6',
+          createdBy: 'user-6',
           status: 'in_progress',
           progressPercentage: 40
         };
@@ -583,6 +584,7 @@ export function registerProjectTrackerRoutes(app: Express) {
           updatedAt: '2024-10-15T10:30:00Z',
           projectManagerId: 'pm-001',
           assignedTo: 'user-6',
+          createdBy: 'user-6',
           status: 'in_progress',
           progressPercentage: 20
         };
@@ -607,6 +609,7 @@ export function registerProjectTrackerRoutes(app: Express) {
           updatedAt: '2024-10-15T10:30:00Z',
           projectManagerId: 'pm-001',
           assignedTo: 'user-6',
+          createdBy: 'user-6',
           status: 'in_progress',
           progressPercentage: 20
         };
@@ -672,7 +675,13 @@ export function registerProjectTrackerRoutes(app: Express) {
         createdBy: req.user?.id || 'unknown',
         isPublic: projectData.isPublic ?? true,
         publicDescription: projectData.publicDescription,
-        jurisdictions: projectData.jurisdictions || [],
+        jurisdictions: (projectData.jurisdictions || []).map((j: any) => ({
+          id: `jur-${Date.now()}`,
+          projectId: `proj-${Date.now()}`,
+          jurisdictionId: j.jurisdictionId,
+          relationshipType: j.relationshipType || 'primary',
+          createdAt: new Date().toISOString(),
+        })),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };

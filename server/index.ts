@@ -8,12 +8,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Session configuration
+if (!process.env.SESSION_SECRET) {
+  console.warn("WARNING: SESSION_SECRET not set. Using random secret (sessions will not persist across restarts).");
+}
+const sessionSecret = process.env.SESSION_SECRET || require("crypto").randomBytes(32).toString("hex");
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'guyana-civic-secret-key',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));

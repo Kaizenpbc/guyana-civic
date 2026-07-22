@@ -107,7 +107,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {authData?.user && (
+              {authData?.user ? (
                 <div className="text-right">
                   <p className="text-sm font-medium">Welcome, {authData.user.fullName}</p>
                   <p className="text-xs text-muted-foreground capitalize">{authData.user.role}</p>
@@ -123,6 +123,13 @@ export default function HomePage() {
                     </Button>
                   )}
                 </div>
+              ) : (
+                <Button 
+                  onClick={() => navigate('/login')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Staff Login
+                </Button>
               )}
             </div>
           </div>

@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 
 interface SmartNotificationsProps {
-  projectId: string;
+  projectId?: string;
+  userRole?: string;
 }
 
 export default function SmartNotifications({ projectId }: SmartNotificationsProps) {

@@ -105,22 +105,22 @@ const ProjectPlanningTemplates: React.FC<ProjectPlanningTemplatesProps> = ({
 
   // Filter documents based on selected phases
   const getFilteredDocuments = () => {
-    if (selectedPhases.length === 0) {
-      return []; // Show no documents if no phases selected
+    if (!template || selectedPhases.length === 0) {
+      return []; // Show no documents if no phases selected or no template
     }
-    
+
     // If all phases are selected, show all documents
     if (selectedPhases.length === template.phases.length) {
       return template.documents;
     }
-    
+
     // Filter documents based on selected phases
     return template.documents.filter(doc => {
       // Map phase names to document relevance
-      const phaseNames = selectedPhases.map(phaseId => 
+      const phaseNames = selectedPhases.map(phaseId =>
         template.phases.find(p => p.id === phaseId)?.name.toLowerCase()
-      );
-      
+      ).filter((name): name is string => name !== undefined);
+
       // Check if document is relevant to any selected phase
       return isDocumentRelevantToPhases(doc, phaseNames);
     });

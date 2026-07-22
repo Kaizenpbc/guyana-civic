@@ -72,7 +72,7 @@ const ProjectTable: React.FC<ProjectTableProps> = ({ projects }) => {
       return { text: 'On Hold', color: 'bg-yellow-100 text-yellow-800', icon: Clock };
     }
 
-    if (project.status === 'initiate') {
+    if ((project.status as string) === 'initiate') {
       return { text: 'Initiate', color: 'bg-purple-100 text-purple-800', icon: Info };
     }
 
