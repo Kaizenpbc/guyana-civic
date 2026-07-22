@@ -90,3 +90,7 @@ jspm_packages/
 # OS
 .DS_Store
 Thumbs.db
+
+# Credentials & sensitive files
+cookies.txt
+test-login.json

@@ -8,8 +8,22 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware
-app.use(helmet());
+// Security middleware with relaxed CSP for development
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://unpkg.com/*"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://unpkg.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "https:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+}));
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5000'],
   credentials: true
@@ -25,9 +39,6 @@ app.use('/api/', limiter);
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files from client directory
-app.use(express.static('client'));
 
 // In-memory storage for testing (will be replaced with MySQL)
 const mockData = {
@@ -57,6 +68,9 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.sendFile('simple-pm.html', { root: __dirname + '/..' });
 });
+
+// Serve static files from client directory (after main route)
+app.use(express.static('client'));
 
 // Authentication endpoints
 app.post('/api/auth/login', (req, res) => {

@@ -23,8 +23,37 @@
             </div>
         </div>
 
+        <!-- Login Form -->
+        <div id="loginForm" class="max-w-md mx-auto mt-20">
+            <div class="bg-white rounded-lg shadow p-8">
+                <h2 class="text-2xl font-bold text-center mb-6">PM Application Login</h2>
+                <form id="loginFormElement" class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                        <input type="text" id="username" name="username" required 
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="password" name="password" required 
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button type="submit" 
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Login
+                    </button>
+                </form>
+                <div id="errorMessage" class="mt-4 text-red-600 text-sm hidden"></div>
+                <div class="mt-4 text-center text-sm text-gray-600">
+                    <p><strong>Test Credentials:</strong></p>
+                    <p>Username: <code class="bg-gray-100 px-1 rounded">admin</code></p>
+                    <p>Password: <code class="bg-gray-100 px-1 rounded">admin</code></p>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div id="mainContent" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Projects List -->
                 <div class="lg:col-span-2">
@@ -81,6 +110,72 @@
 
     <script>
         console.log('PM Application loaded successfully!');
+        
+        // Check if user is already logged in
+        const token = localStorage.getItem('pm_token');
+        if (token) {
+            showMainContent();
+        }
+        
+        // Handle login form submission
+        document.getElementById('loginFormElement').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store token and show main content
+                    localStorage.setItem('pm_token', data.token);
+                    localStorage.setItem('pm_user', JSON.stringify(data.user));
+                    showMainContent();
+                } else {
+                    // Show error message
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Network error. Please try again.';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+        
+        function showMainContent() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            
+            // Update header to show user info
+            const user = JSON.parse(localStorage.getItem('pm_user') || '{}');
+            const header = document.querySelector('.max-w-7xl.mx-auto');
+            if (header && user.username) {
+                const userInfo = document.createElement('div');
+                userInfo.className = 'flex items-center space-x-4';
+                userInfo.innerHTML = `
+                    <span class="text-sm text-gray-600">Welcome, ${user.username}</span>
+                    <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">Logout</button>
+                `;
+                header.appendChild(userInfo);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('pm_token');
+            localStorage.removeItem('pm_user');
+            location.reload();
+        }
     </script>
 </body>
 </html>
