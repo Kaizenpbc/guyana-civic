@@ -736,7 +736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Analytics Dashboard endpoint with real-time data
   app.get("/api/analytics/dashboard", requireAuth, async (req, res) => {
     try {
-      const user = req.user;
+      const user = req.user!;
       const currentTime = new Date().toISOString();
 
       // Generate comprehensive analytics data with real-time updates
@@ -942,10 +942,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/reports/generate", requireAuth, async (req, res) => {
     try {
       const { reportType, format, dateRange, filters } = req.body;
-      const user = req.user;
+      const user = req.user!;
 
       // Generate report based on type
-      let reportData;
+      let reportData: Record<string, any>;
 
       switch (reportType) {
         case "performance":
@@ -1099,7 +1099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/kpi/create", requireAuth, async (req, res) => {
     try {
       const { name, description, formula, targets, dataSource, category } = req.body;
-      const user = req.user;
+      const user = req.user!;
 
       // Create custom KPI
       const kpi = {
@@ -1132,7 +1132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Custom KPIs endpoint
   app.get("/api/kpi/list", requireAuth, async (req, res) => {
     try {
-      const user = req.user;
+      const user = req.user!;
 
       // Return sample custom KPIs
       const kpis = [
@@ -1181,11 +1181,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate predictive completion date based on multiple factors
       const currentDate = new Date();
-      const plannedEndDate = new Date(project.plannedEndDate || project.plannedStartDate);
+      const plannedEndDate = new Date(project.plannedEndDate || project.plannedStartDate || new Date());
 
       // Base prediction on project progress and velocity
-      const progressPercentage = project.progressPercentage || 0;
-      const daysSinceStart = Math.floor((currentDate.getTime() - new Date(project.plannedStartDate).getTime()) / (1000 * 60 * 60 * 24));
+      const progressPercentage = project.progressPercentage ?? 0;
+      const daysSinceStart = Math.floor((currentDate.getTime() - new Date(project.plannedStartDate || new Date()).getTime()) / (1000 * 60 * 60 * 24));
 
       // Calculate velocity (progress per day)
       const velocity = progressPercentage / Math.max(daysSinceStart, 1);
@@ -1203,7 +1203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Large budget projects have more complexity
-      if (project.budgetAllocated && project.budgetAllocated > 5000000) {
+      if (project.budgetAllocated && Number(project.budgetAllocated) > 5000000) {
         riskMultiplier *= 1.1;
       }
 
@@ -1284,15 +1284,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const currentDate = new Date();
-      const plannedEndDate = new Date(project.plannedEndDate || project.plannedStartDate);
-      const daysElapsed = Math.floor((currentDate.getTime() - new Date(project.plannedStartDate).getTime()) / (1000 * 60 * 60 * 24));
-      const totalPlannedDays = Math.floor((plannedEndDate.getTime() - new Date(project.plannedStartDate).getTime()) / (1000 * 60 * 60 * 24));
+      const plannedEndDate = new Date(project.plannedEndDate || project.plannedStartDate || new Date());
+      const daysElapsed = Math.floor((currentDate.getTime() - new Date(project.plannedStartDate || new Date()).getTime()) / (1000 * 60 * 60 * 24));
+      const totalPlannedDays = Math.floor((plannedEndDate.getTime() - new Date(project.plannedStartDate || new Date()).getTime()) / (1000 * 60 * 60 * 24));
 
       // Calculate scores for each dimension (0-100 scale)
 
       // 1. TIMELINE HEALTH (40% weight)
       let timelineScore = 100;
-      const progressRatio = project.progressPercentage / 100;
+      const progressRatio = (project.progressPercentage ?? 0) / 100;
       const expectedProgress = Math.min(daysElapsed / totalPlannedDays, 1);
 
       if (progressRatio < expectedProgress * 0.8) {
@@ -1306,7 +1306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 2. BUDGET HEALTH (30% weight)
       let budgetScore = 100;
       if (project.budgetSpent && project.budgetAllocated) {
-        const budgetUtilization = project.budgetSpent / project.budgetAllocated;
+        const budgetUtilization = Number(project.budgetSpent) / Number(project.budgetAllocated);
         if (budgetUtilization > 1.1) {
           budgetScore = Math.max(10, 100 - (budgetUtilization - 1) * 200); // Over budget
         } else if (budgetUtilization > 0.9) {
@@ -1334,9 +1334,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 4. QUALITY HEALTH (10% weight) - based on project maturity and issue resolution
       let qualityScore = 80;
-      if (project.progressPercentage > 80) {
+      if ((project.progressPercentage ?? 0) > 80) {
         qualityScore += 10;
-      } else if (project.progressPercentage < 30) {
+      } else if ((project.progressPercentage ?? 0) < 30) {
         qualityScore -= 15;
       }
       // Factor in issue resolution rate
@@ -1471,8 +1471,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get project health score for resource recommendations
       const healthResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/health-score`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -1488,7 +1488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                                project.category === "building_construction" ? 0.7 :
                                project.category === "education" ? 0.5 : 0.4;
 
-      const budgetSize = project.budgetAllocated ? project.budgetAllocated / 10000000 : 0.5; // Normalized
+      const budgetSize = project.budgetAllocated ? Number(project.budgetAllocated) / 10000000 : 0.5; // Normalized
       const projectSize = Math.min(projectComplexity * budgetSize, 1);
 
       // Calculate resource needs
@@ -1523,8 +1523,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const resourceUtilization = totalRequired > 0 ? (totalCurrent / totalRequired) * 100 : 100;
 
       // Generate recommendations based on gaps
-      const recommendations = [];
-      const resourceGaps = [];
+      const recommendations: string[] = [];
+      const resourceGaps: any[] = [];
 
       Object.entries(requiredResources).forEach(([role, data]: [string, any]) => {
         const gap = data.required - data.current;
@@ -1629,8 +1629,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get project health data for risk correlation
       const healthResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/health-score`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -1642,8 +1642,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get resource allocation data
       const resourceResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/resource-allocation`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -1723,8 +1723,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Identify risk patterns
-      const riskPatterns = [];
-      const categoryCounts = {};
+      const riskPatterns: any[] = [];
+      const categoryCounts: Record<string, number> = {};
       recentRisks.forEach(risk => {
         categoryCounts[risk.category] = (categoryCounts[risk.category] || 0) + 1;
       });
@@ -1832,7 +1832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const currentDate = new Date();
-      const projectEndDate = new Date(project.plannedEndDate || project.plannedStartDate);
+      const projectEndDate = new Date(project.plannedEndDate || project.plannedStartDate || new Date());
 
       // Calculate days until project deadline
       const daysUntilDeadline = Math.ceil((projectEndDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -1901,11 +1901,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get project milestones and generate reminders for them
+      const startDate = new Date(project.plannedStartDate || new Date());
+      const progress = project.progressPercentage ?? 0;
       const milestones = [
-        { name: 'Planning Phase', date: new Date(project.plannedStartDate), completed: project.progressPercentage > 10 },
-        { name: 'Execution Phase', date: new Date(project.plannedStartDate).getTime() + (projectEndDate.getTime() - new Date(project.plannedStartDate).getTime()) * 0.3, completed: project.progressPercentage > 40 },
-        { name: 'Testing Phase', date: new Date(project.plannedStartDate).getTime() + (projectEndDate.getTime() - new Date(project.plannedStartDate).getTime()) * 0.7, completed: project.progressPercentage > 70 },
-        { name: 'Final Review', date: new Date(project.plannedStartDate).getTime() + (projectEndDate.getTime() - new Date(project.plannedStartDate).getTime()) * 0.9, completed: project.progressPercentage > 90 }
+        { name: 'Planning Phase', date: startDate, completed: progress > 10 },
+        { name: 'Execution Phase', date: startDate.getTime() + (projectEndDate.getTime() - startDate.getTime()) * 0.3, completed: progress > 40 },
+        { name: 'Testing Phase', date: startDate.getTime() + (projectEndDate.getTime() - startDate.getTime()) * 0.7, completed: progress > 70 },
+        { name: 'Final Review', date: startDate.getTime() + (projectEndDate.getTime() - startDate.getTime()) * 0.9, completed: progress > 90 }
       ];
 
       milestones.forEach((milestone, index) => {
@@ -1977,8 +1979,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get project health and resource data for escalation analysis
       const healthResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/health-score`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -1989,8 +1991,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const resourceResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/resource-allocation`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -2004,7 +2006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeEscalations = [];
 
       // 1. Time-based escalations
-      const daysUntilDeadline = Math.ceil((new Date(project.plannedEndDate || project.plannedStartDate).getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysUntilDeadline = Math.ceil((new Date(project.plannedEndDate || project.plannedStartDate || new Date()).getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
 
       if (daysUntilDeadline < 0) {
         activeEscalations.push({
@@ -2042,7 +2044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 2. Budget-based escalations
       if (project.budgetSpent && project.budgetAllocated) {
-        const budgetUtilization = (project.budgetSpent / project.budgetAllocated) * 100;
+        const budgetUtilization = (Number(project.budgetSpent) / Number(project.budgetAllocated)) * 100;
 
         if (budgetUtilization > 100) {
           activeEscalations.push({
@@ -2247,7 +2249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectMetrics: {
           daysUntilDeadline,
           budgetUtilization: project.budgetSpent && project.budgetAllocated ?
-            (project.budgetSpent / project.budgetAllocated) * 100 : 0,
+            (Number(project.budgetSpent) / Number(project.budgetAllocated)) * 100 : 0,
           healthScore: healthData ? healthData.overallScore : null,
           riskScore: healthData ? healthData.dimensions.risk.score : null,
           resourceGaps: resourceData ? resourceData.resourceGaps.length : 0
@@ -2284,8 +2286,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get data from various sources for comprehensive reporting
       const healthResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/health-score`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -2296,8 +2298,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const resourceResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/resource-allocation`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -2308,8 +2310,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const riskResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/risk-trends`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -2320,8 +2322,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const escalationResponse = await fetch(`${req.protocol}://${req.get('host')}/api/projects/${projectId}/escalation-rules`, {
         headers: {
-          'Authorization': req.headers.authorization,
-          'Cookie': req.headers.cookie
+          'Authorization': req.headers.authorization || '',
+          'Cookie': req.headers.cookie || ''
         }
       });
 
@@ -2369,7 +2371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Workflow Approval Chains endpoint
   app.get("/api/approvals/pending", requireAuth, async (req, res) => {
     try {
-      const user = req.user;
+      const user = req.user!;
       const { type, status = 'pending' } = req.query;
 
       // Mock approval data - in real app this would come from database
@@ -2495,7 +2497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { action, comments } = req.body;
-      const user = req.user;
+      const user = req.user!;
 
       // Mock approval processing - in real app this would update database
       const mockResult = {
@@ -2522,7 +2524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Smart Notifications System endpoint
   app.get("/api/notifications/smart", requireAuth, async (req, res) => {
     try {
-      const user = req.user;
+      const user = req.user!;
       const { priority, type, unread_only = 'false' } = req.query;
 
       // Mock smart notifications based on user role and context
@@ -2698,7 +2700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Sort by priority and timestamp
       filteredNotifications.sort((a, b) => {
-        const priorityOrder = { critical: 3, urgent: 2, high: 1, medium: 0, low: 0 };
+        const priorityOrder: Record<string, number> = { critical: 3, urgent: 2, high: 1, medium: 0, low: 0 };
         const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
         if (priorityDiff !== 0) return priorityDiff;
         return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
@@ -2733,7 +2735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update notification preferences
   app.post("/api/notifications/preferences", requireAuth, async (req, res) => {
     try {
-      const user = req.user;
+      const user = req.user!;
       const { emailNotifications, smsNotifications, pushNotifications, quietHours, priorityThreshold } = req.body;
 
       // Mock preference update - in real app this would update database
@@ -2762,7 +2764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/notifications/:id/read", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const user = req.user;
+      const user = req.user!;
 
       // Mock notification read update - in real app this would update database
       const result = {
@@ -2786,7 +2788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI-Powered Task Assignment endpoint
   app.get("/api/tasks/ai-assign", requireAuth, async (req, res) => {
     try {
-      const user = req.user;
+      const user = req.user!;
       const { projectId, taskDescription, priority, skills } = req.query;
 
       // Mock team members with skills and availability
@@ -2892,7 +2894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const task of tasks) {
           const candidates = team.map(member => {
             // Calculate skill match score (0-100)
-            const skillMatch = task.requiredSkills.reduce((score, skill) => {
+            const skillMatch = task.requiredSkills.reduce((score: number, skill: string) => {
               return score + (member.skills.includes(skill) ? 100 / task.requiredSkills.length : 0);
             }, 0);
 
@@ -3012,7 +3014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analytics/forecast", requireAuth, async (req, res) => {
     try {
       const { timeframe, metric } = req.query;
-      const user = req.user;
+      const user = req.user!;
 
       // Generate forecasting data
       const forecast = {
@@ -3056,12 +3058,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cross-Project Analysis endpoint
   app.get("/api/cross-project/analysis", requireAuth, async (req, res) => {
     try {
-      const user = req.user;
+      const user = req.user!;
 
       // For PM users, analyze their assigned projects
       if (user.role === "pm") {
-        const projects = Array.from(storage.projects.values())
-          .filter(p => p.assignedTo === user.id);
+        const allProjects = await storage.listProjects(user.jurisdictionId || "", false);
+        const projects = allProjects.filter((p: any) => p.assignedTo === user.id);
 
         const analysis = {
           totalProjects: projects.length,
@@ -3129,7 +3131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rdc/dashboard", requireAuth, requireRDCManager, async (req, res) => {
     try {
       // Get user's jurisdiction
-      const userJurisdictionId = req.user.jurisdictionId;
+      const userJurisdictionId = req.user!.jurisdictionId;
       if (!userJurisdictionId) {
         return res.status(400).json({ error: "User not assigned to a jurisdiction" });
       }
@@ -3140,25 +3142,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Jurisdiction not found" });
       }
 
-      // Get all users in this jurisdiction
-      const jurisdictionUsers = await storage.getUsersByJurisdiction(userJurisdictionId);
-      const pms = jurisdictionUsers.filter(user => user.role === 'pm');
-
-      // Get projects for all PMs in this jurisdiction
-      const allProjects = [];
-      for (const pm of pms) {
-        // This would typically come from a more sophisticated query
-        // For now, we'll simulate getting PM-specific projects
-        const pmProjects = Array.from(storage.projects.values())
-          .filter(project => project.jurisdictionId === userJurisdictionId)
-          .slice(0, 4); // Limit to 4 projects per PM for demo
-        allProjects.push(...pmProjects);
-      }
+      // Get projects for this jurisdiction
+      const allProjects = await storage.listProjects(userJurisdictionId, false);
+      const pms: { id: string; role: string; fullName?: string; username: string; [key: string]: any }[] = [];
 
       // Calculate aggregated statistics
       const totalProjects = allProjects.length;
-      const totalBudget = allProjects.reduce((sum, project) => sum + (project.budgetAllocated || 0), 0);
-      const totalSpent = allProjects.reduce((sum, project) => sum + (project.budgetSpent || 0), 0);
+      const totalBudget = allProjects.reduce((sum, project) => sum + Number(project.budgetAllocated || 0), 0);
+      const totalSpent = allProjects.reduce((sum, project) => sum + Number(project.budgetSpent || 0), 0);
       const activeProjects = allProjects.filter(project => project.status === 'in_progress').length;
       const completedProjects = allProjects.filter(project => project.status === 'completed').length;
 

@@ -10,7 +10,8 @@ export default defineConfig({
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
+          // @ts-ignore - optional Replit plugin, only available in Replit environment
+          await import("@replit/vite-plugin-cartographer").then((m: any) =>
             m.cartographer(),
           ),
         ]
