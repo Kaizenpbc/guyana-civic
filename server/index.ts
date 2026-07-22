@@ -11,7 +11,8 @@ app.use(express.urlencoded({ extended: false }));
 if (!process.env.SESSION_SECRET) {
   console.warn("WARNING: SESSION_SECRET not set. Using random secret (sessions will not persist across restarts).");
 }
-const sessionSecret = process.env.SESSION_SECRET || require("crypto").randomBytes(32).toString("hex");
+import crypto from "crypto";
+const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 
 app.use(session({
   secret: sessionSecret,
@@ -69,7 +70,7 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (process.env.NODE_ENV?.trim() === "development") {
+  if (process.env.NODE_ENV?.trim() !== "production") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
