@@ -10,7 +10,7 @@ import {
 import session from "express-session";
 import { registerProjectTrackerRoutes } from "./project-tracker-routes";
 import { registerPMToolRoutes } from "./pm-tool-routes";
-import riskManagementRoutes from "./risk-management-routes";
+import riskManagementRoutes, { getRisksForProject, getIssuesForProject, getActionsForProject } from "./risk-management-routes";
 import notificationRoutes from "./notification-routes";
 import bcrypt from "bcryptjs";
 
@@ -1206,11 +1206,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         riskMultiplier *= 1.1;
       }
 
-      // Apply risk adjustments (simplified for now - will enhance when risk storage is integrated)
-      // TODO: Integrate with risk management system for more accurate predictions
-      // For now, add a small buffer for infrastructure projects
-      if (project.category === "infrastructure" || project.category === "building_construction") {
-        riskMultiplier *= 1.1; // 10% buffer for construction risks
+      // Apply risk adjustments from risk management data
+      const projectRisks = getRisksForProject(projectId);
+      const activeRisks = projectRisks.filter(r => !['closed', 'mitigated'].includes(r.status));
+      const highRisks = activeRisks.filter(r => r.risk_score >= 6);
+      if (highRisks.length > 0) {
+        riskMultiplier *= 1 + (highRisks.length * 0.05); // 5% per high-severity risk
+      }
+      if (activeRisks.length > 3) {
+        riskMultiplier *= 1.1; // Additional buffer for many active risks
       }
 
       const adjustedDaysRemaining = estimatedDaysRemaining * riskMultiplier;
@@ -1311,32 +1315,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // 3. RISK HEALTH (15% weight)
-      let riskScore = 85; // Default good score
-      // TODO: Integrate with actual risk data when available
-      // For now, base on project type and size
-      if (project.category === "infrastructure" || project.category === "building_construction") {
-        riskScore -= 10; // Higher risk for construction
+      // 3. RISK HEALTH (15% weight) - integrated with risk management data
+      let riskScore = 90; // Start high, deduct for active risks
+      const healthRisks = getRisksForProject(projectId);
+      const healthIssues = getIssuesForProject(projectId);
+      const activeHealthRisks = healthRisks.filter(r => !['closed', 'mitigated'].includes(r.status));
+      const openIssues = healthIssues.filter(i => !['resolved', 'closed'].includes(i.status));
+      // Deduct for each active risk based on severity
+      for (const r of activeHealthRisks) {
+        riskScore -= r.risk_score >= 9 ? 15 : r.risk_score >= 6 ? 8 : 3;
       }
-      if (project.budgetAllocated && project.budgetAllocated > 5000000) {
-        riskScore -= 5; // Higher risk for large budgets
+      // Deduct for open issues
+      for (const i of openIssues) {
+        riskScore -= i.severity === 'critical' ? 12 : i.severity === 'high' ? 6 : 2;
       }
-      riskScore = Math.max(30, Math.min(100, riskScore));
+      riskScore = Math.max(20, Math.min(100, riskScore));
 
-      // 4. QUALITY HEALTH (10% weight)
-      let qualityScore = 80; // Default good score
-      // TODO: Integrate with actual quality metrics
-      // For now, base on project maturity
+      // 4. QUALITY HEALTH (10% weight) - based on project maturity and issue resolution
+      let qualityScore = 80;
       if (project.progressPercentage > 80) {
-        qualityScore += 10; // Mature projects tend to have better quality
+        qualityScore += 10;
       } else if (project.progressPercentage < 30) {
-        qualityScore -= 15; // Early stage projects have uncertain quality
+        qualityScore -= 15;
+      }
+      // Factor in issue resolution rate
+      const totalIssueCount = healthIssues.length;
+      const resolvedIssues = healthIssues.filter(i => ['resolved', 'closed'].includes(i.status));
+      if (totalIssueCount > 0) {
+        const resolutionRate = resolvedIssues.length / totalIssueCount;
+        qualityScore = Math.round(qualityScore * (0.7 + resolutionRate * 0.3));
       }
 
-      // 5. RESOURCE HEALTH (5% weight)
-      let resourceScore = 75; // Default moderate score
-      // TODO: Integrate with actual resource allocation data
-      // For now, assume adequate resources
+      // 5. RESOURCE HEALTH (5% weight) - based on action completion and assignment
+      let resourceScore = 75;
+      const projectActions = getActionsForProject(projectId);
+      if (projectActions.length > 0) {
+        const completedActions = projectActions.filter(a => a.status === 'completed').length;
+        const overdueActions = projectActions.filter(a => a.due_date && new Date(a.due_date) < currentDate && a.status !== 'completed').length;
+        resourceScore = Math.round(70 + (completedActions / projectActions.length) * 30 - overdueActions * 5);
+        resourceScore = Math.max(30, Math.min(100, resourceScore));
+      }
 
       // Calculate overall health score with weights
       const overallScore = Math.round(

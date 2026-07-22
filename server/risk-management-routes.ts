@@ -538,4 +538,17 @@ router.put("/api/actions/:actionId", requireAuth, requireStaff, async (req, res)
   }
 });
 
+// Exported accessors for cross-module integration
+export function getRisksForProject(projectId: string) {
+  return Array.from(risks.values()).filter(r => r.project_id === projectId);
+}
+
+export function getIssuesForProject(projectId: string) {
+  return Array.from(issues.values()).filter(i => i.project_id === projectId);
+}
+
+export function getActionsForProject(projectId: string) {
+  return Array.from(actions.values()).filter(a => a.project_id === projectId);
+}
+
 export default router;
