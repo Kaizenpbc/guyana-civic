@@ -22,7 +22,7 @@ import NotFound from "@/pages/NotFound";
 import BarimaMemorial from "@/pages/BarimaMemorial";
 import React from "react";
 
-const isMemorialSubdomain = window.location.hostname.startsWith("memorial.");
+const isMemorialSubdomain = window.location.hostname.startsWith("barima.");
 
 function Router() {
   if (isMemorialSubdomain) {
