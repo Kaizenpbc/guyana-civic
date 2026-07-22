@@ -198,37 +198,7 @@ export default function BarimaMemorial() {
         </div>
       </section>
 
-      {/* ===== A NATION IN MOURNING ===== */}
-      <section className="py-20 px-4 bg-emerald-800 text-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <Users className="h-8 w-8 text-yellow-400 mx-auto mb-6" />
-          <h2 className="text-2xl md:text-3xl font-semibold mb-8">
-            A Nation in Mourning
-          </h2>
-          <div className="space-y-6 text-emerald-100/80 leading-relaxed text-lg font-light">
-            <p>
-              The news travelled swiftly — from the riverbanks of the Barima to
-              the streets of Georgetown, from the savannahs of the Rupununi to
-              Guyanese communities abroad. Wherever it reached, hearts broke.
-            </p>
-            <p>
-              Candles were lit in windows. Prayers were whispered in churches, mandirs,
-              and masjids. Schools fell silent. Neighbours held one another. Strangers wept.
-            </p>
-            <p>
-              In the days that followed, Guyana did what it has always done in times
-              of sorrow — it came together. Communities organised vigils. Families
-              opened their homes. The nation wrapped its arms around those who had
-              lost the most.
-            </p>
-          </div>
-          <div className="mt-12 flex items-center justify-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-yellow-400/60" />
-            <div className="w-2 h-2 rounded-full bg-yellow-400/40" />
-            <div className="w-2 h-2 rounded-full bg-yellow-400/20" />
-          </div>
-        </div>
-      </section>
+      {/* TODO: "A Nation in Mourning" section - add back when real content is available */}
 
       {/* ===== TIMELINE OF REMEMBRANCE ===== */}
       <section className="py-20 px-4">
