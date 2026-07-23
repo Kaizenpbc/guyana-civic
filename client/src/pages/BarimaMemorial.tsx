@@ -164,10 +164,19 @@ export default function BarimaMemorial() {
             Region 1, Barima-Waini, Guyana
           </p>
           <div className="w-20 h-px bg-yellow-400/40 mx-auto mb-10" />
-          <p className="text-emerald-100/70 max-w-2xl mx-auto leading-relaxed text-lg font-light">
+          <p className="text-emerald-100/70 max-w-2xl mx-auto leading-relaxed text-lg font-light mb-10">
             They were mothers, fathers, children, neighbours, and friends.
             They were loved. They are remembered. They will never be forgotten.
           </p>
+          <div className="max-w-xl mx-auto bg-white/10 border border-white/15 rounded-xl px-6 py-5 text-sm text-emerald-100/80 leading-relaxed">
+            <p className="font-medium text-white mb-2">A Place for Remembrance Only</p>
+            <p>
+              This site exists solely to honour the memory of those we lost.
+              It is not a space for politics, blame, or debate. We kindly ask
+              all visitors to keep tributes respectful, personal, and focused
+              on remembrance. Let us grieve together with dignity.
+            </p>
+          </div>
         </div>
       </header>
 
@@ -283,11 +292,66 @@ export default function BarimaMemorial() {
                 </div>
 
                 <p className="text-gray-500 text-sm mb-6 font-light">
-                  Your words matter. Share a memory, a prayer, or simply let them know
-                  they are not forgotten.
+                  Share a photo — of a loved one, a candle, flowers, or a place that holds meaning.
+                  Add a short caption to go with it.
                 </p>
 
                 <div className="space-y-4">
+                  {/* Photo upload — required */}
+                  <div>
+                    <label className="block text-sm text-gray-500 mb-1">
+                      Photo <span className="text-emerald-600">*</span>
+                    </label>
+                    {photoPreview ? (
+                      <div className="relative inline-block">
+                        <img
+                          src={photoPreview}
+                          alt="Preview"
+                          className="h-40 rounded-lg object-cover"
+                        />
+                        <button
+                          onClick={() => {
+                            setPhoto(null);
+                            setPhotoPreview(null);
+                          }}
+                          className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 text-white"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center gap-3 py-8
+                                        border-2 border-dashed border-gray-200 rounded-lg
+                                        text-gray-400 hover:text-emerald-600 hover:border-emerald-300
+                                        cursor-pointer transition-colors">
+                        <ImagePlus className="h-8 w-8" />
+                        <span className="text-sm">Click to upload a photo</span>
+                        <span className="text-xs text-gray-300">JPG, PNG, WEBP — max 5MB</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoSelect}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-500 mb-1">
+                      Short Caption <span className="text-emerald-600">*</span>
+                      <span className="text-gray-300 ml-2">({message.length}/150)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={message}
+                      onChange={(e) => { if (e.target.value.length <= 150) setMessage(e.target.value); }}
+                      placeholder="e.g. Rest in peace, you will always be in our hearts."
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5
+                                 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm text-gray-500 mb-1">
@@ -317,62 +381,10 @@ export default function BarimaMemorial() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm text-gray-500 mb-1">
-                      Your Message <span className="text-emerald-600">*</span>
-                    </label>
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Share a memory, a prayer, or words of comfort..."
-                      rows={5}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3
-                                 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-emerald-400
-                                 resize-none"
-                    />
-                  </div>
-
-                  {/* Photo upload */}
-                  <div>
-                    <label className="block text-sm text-gray-500 mb-1">
-                      Photo (optional)
-                    </label>
-                    {photoPreview ? (
-                      <div className="relative inline-block">
-                        <img
-                          src={photoPreview}
-                          alt="Preview"
-                          className="h-32 rounded-lg object-cover"
-                        />
-                        <button
-                          onClick={() => {
-                            setPhoto(null);
-                            setPhotoPreview(null);
-                          }}
-                          className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 text-white"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex items-center gap-2 text-gray-400 hover:text-emerald-600
-                                        cursor-pointer transition-colors text-sm">
-                        <ImagePlus className="h-5 w-5" />
-                        <span>Add a photo</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handlePhotoSelect}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
-                  </div>
-
                   <div className="flex justify-end pt-2">
                     <button
                       onClick={() => submitMutation.mutate()}
-                      disabled={!message.trim() || submitMutation.isPending}
+                      disabled={!photo || !message.trim() || submitMutation.isPending}
                       className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed
                                  text-white font-semibold px-6 py-2.5 rounded-lg flex items-center gap-2 transition-colors"
                     >
