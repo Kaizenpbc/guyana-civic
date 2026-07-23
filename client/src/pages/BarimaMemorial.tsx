@@ -46,6 +46,41 @@ function TributeCard({ tribute }: { tribute: Tribute }) {
   );
 }
 
+function GuyanaFlag({ size = 48 }: { size?: number }) {
+  const h = size * 0.6;
+  return (
+    <svg width={size} height={h} viewBox="0 0 600 360" fill="none">
+      <rect width="600" height="360" fill="#009739" />
+      <polygon points="0,0 600,180 0,360" fill="#FCD116" />
+      <polygon points="0,24 540,180 0,336" fill="#009739" />
+      <polygon points="0,0 300,180 0,360" fill="#CE1126" />
+      <polygon points="0,24 250,180 0,336" fill="#000000" />
+    </svg>
+  );
+}
+
+function CoatOfArms({ size = 64 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+      {/* Shield */}
+      <path d="M50 10 L85 25 L85 55 Q85 80 50 95 Q15 80 15 55 L15 25 Z" fill="#009739" stroke="#FCD116" strokeWidth="2" />
+      {/* Wavy lines representing rivers */}
+      <path d="M25 45 Q35 40 45 45 Q55 50 65 45 Q75 40 80 45" stroke="#4FC3F7" strokeWidth="2" fill="none" />
+      <path d="M25 55 Q35 50 45 55 Q55 60 65 55 Q75 50 80 55" stroke="#4FC3F7" strokeWidth="2" fill="none" />
+      {/* Diamond (represents wealth) */}
+      <polygon points="50,25 60,37 50,49 40,37" fill="#FCD116" stroke="#CE1126" strokeWidth="1" />
+      {/* Helmet/crest */}
+      <circle cx="50" cy="15" r="6" fill="#FCD116" stroke="#CE1126" strokeWidth="1" />
+      {/* Motto banner */}
+      <rect x="20" y="75" width="60" height="12" rx="2" fill="#FCD116" />
+      <text x="50" y="84" textAnchor="middle" fontSize="5" fontWeight="bold" fill="#009739">ONE PEOPLE ONE NATION</text>
+      {/* Jaguars on sides */}
+      <circle cx="12" cy="45" r="5" fill="#FCD116" />
+      <circle cx="88" cy="45" r="5" fill="#FCD116" />
+    </svg>
+  );
+}
+
 const timelineEvents = [
   {
     date: "Date of Tragedy — July 17, 2026",
@@ -149,6 +184,9 @@ export default function BarimaMemorial() {
               <Flame className="h-16 w-16 text-yellow-400 animate-pulse" />
               <div className="absolute inset-0 blur-xl bg-yellow-400/20 rounded-full" />
             </div>
+          </div>
+          <div className="flex justify-center mb-4">
+            <GuyanaFlag size={80} />
           </div>
           <p className="text-emerald-300 text-sm tracking-[0.3em] uppercase mb-4 font-medium">
             A Memorial for Guyana
@@ -454,6 +492,9 @@ export default function BarimaMemorial() {
             May they rest in eternal peace. May their families find comfort.
             May Guyana never forget.
           </p>
+          <div className="flex justify-center mb-6 opacity-60">
+            <CoatOfArms size={72} />
+          </div>
           <div className="flex items-center justify-center gap-2 text-yellow-400/60 text-sm">
             <Flame className="h-4 w-4" />
             <span>This flame burns in their honour</span>
