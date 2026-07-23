@@ -487,6 +487,12 @@ export default function BarimaMemorial() {
         <p className="mb-2">
           A tribute by the people of Guyana, for the people of Guyana.
         </p>
+        <p className="mb-3 text-emerald-400/35">
+          Created and maintained by <span className="text-emerald-400/50">Michael Annamunthodo</span>
+        </p>
+        <p className="mb-3">
+          Contact: <a href="mailto:kpbcma@gmail.com" className="text-emerald-400/50 hover:text-emerald-300 underline underline-offset-2">kpbcma@gmail.com</a>
+        </p>
         <p className="text-emerald-400/25">
           barima.reimagine-guyana.com
         </p>
