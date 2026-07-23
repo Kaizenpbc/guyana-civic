@@ -51,6 +51,22 @@ function Router() {
 }
 
 function App() {
+  // Memorial subdomain: skip theme provider and toggle, force light mode
+  if (isMemorialSubdomain) {
+    return (
+      <React.StrictMode>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="light" storageKey="memorial-theme">
+            <TooltipProvider>
+              <BarimaMemorial />
+              <Toaster />
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </React.StrictMode>
+    );
+  }
+
   return (
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>

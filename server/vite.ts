@@ -19,7 +19,8 @@ export async function setupVite(app: Express, server: Server) {
   const viteModule = await import("vite");
   const createViteServer = viteModule.createServer;
   const viteLogger = viteModule.createLogger();
-  const viteConfig = (await import("../vite.config")).default;
+  // @ts-ignore - vite.config is only available in dev
+  const viteConfig = (await import("../vite.config.js")).default;
   const { nanoid } = await import("nanoid");
 
   const serverOptions = {

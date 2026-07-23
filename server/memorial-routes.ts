@@ -5,12 +5,18 @@ import fs from "fs";
 
 const router = Router();
 
-// Ensure uploads directory exists — resolve to project root regardless of running from server/ or dist/server/
+// Resolve project root
 const projectRoot = import.meta.dirname.endsWith(path.join("dist", "server"))
   ? path.resolve(import.meta.dirname, "..", "..")
   : path.resolve(import.meta.dirname, "..");
+
+// Ensure directories exist
 const uploadsDir = path.resolve(projectRoot, "uploads", "memorial");
+const dataDir = path.resolve(projectRoot, "data");
 fs.mkdirSync(uploadsDir, { recursive: true });
+fs.mkdirSync(dataDir, { recursive: true });
+
+const tributesFile = path.join(dataDir, "tributes.json");
 
 // Configure multer for photo uploads
 const storage = multer.diskStorage({
@@ -24,7 +30,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -36,7 +42,6 @@ const upload = multer({
   },
 });
 
-// In-memory tribute store
 interface Tribute {
   id: string;
   name: string;
@@ -46,10 +51,24 @@ interface Tribute {
   createdAt: string;
 }
 
-const tributes: Tribute[] = [];
+function loadTributes(): Tribute[] {
+  try {
+    if (fs.existsSync(tributesFile)) {
+      return JSON.parse(fs.readFileSync(tributesFile, "utf-8"));
+    }
+  } catch (err) {
+    console.error("Failed to load tributes file:", err);
+  }
+  return [];
+}
+
+function saveTributes(tributes: Tribute[]) {
+  fs.writeFileSync(tributesFile, JSON.stringify(tributes, null, 2));
+}
 
 // GET all tributes (newest first)
 router.get("/api/memorial/tributes", (_req, res) => {
+  const tributes = loadTributes();
   res.json(tributes.slice().reverse());
 });
 
@@ -70,7 +89,10 @@ router.post("/api/memorial/tributes", upload.single("photo"), (req, res) => {
     createdAt: new Date().toISOString(),
   };
 
+  const tributes = loadTributes();
   tributes.push(tribute);
+  saveTributes(tributes);
+
   res.status(201).json(tribute);
 });
 

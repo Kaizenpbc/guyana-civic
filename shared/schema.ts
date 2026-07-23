@@ -240,6 +240,7 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   updatedAt: true,
 });
 
+
 // Employee Directory Schemas
 export const directoryFiltersSchema = z.object({
   query: z.string().optional(),
@@ -331,6 +332,7 @@ export type LeaveRequest = typeof leaveRequests.$inferSelect;
 
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
+
 
 // Extended timesheet entry with project information
 export type TimesheetEntryWithProject = TimesheetEntry & {
