@@ -59,24 +59,68 @@ function GuyanaFlag({ size = 48 }: { size?: number }) {
   );
 }
 
-function CoatOfArms({ size = 64 }: { size?: number }) {
+function CoatOfArms({ size = 120 }: { size?: number }) {
+  const h = size * 1.15;
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <svg width={size} height={h} viewBox="0 0 200 230" fill="none">
+      {/* Helmet / Cacique Crown */}
+      <path d="M75 38 Q80 18 100 12 Q120 18 125 38" fill="#CE1126" stroke="#FCD116" strokeWidth="2" />
+      <path d="M82 38 Q85 25 100 20 Q115 25 118 38" fill="#FCD116" />
+      {/* Feather plumes */}
+      <path d="M100 12 Q95 -2 85 2" stroke="#FCD116" strokeWidth="2" fill="none" />
+      <path d="M100 12 Q100 -4 100 0" stroke="#FCD116" strokeWidth="2" fill="none" />
+      <path d="M100 12 Q105 -2 115 2" stroke="#FCD116" strokeWidth="2" fill="none" />
+
       {/* Shield */}
-      <path d="M50 10 L85 25 L85 55 Q85 80 50 95 Q15 80 15 55 L15 25 Z" fill="#009739" stroke="#FCD116" strokeWidth="2" />
-      {/* Wavy lines representing rivers */}
-      <path d="M25 45 Q35 40 45 45 Q55 50 65 45 Q75 40 80 45" stroke="#4FC3F7" strokeWidth="2" fill="none" />
-      <path d="M25 55 Q35 50 45 55 Q55 60 65 55 Q75 50 80 55" stroke="#4FC3F7" strokeWidth="2" fill="none" />
-      {/* Diamond (represents wealth) */}
-      <polygon points="50,25 60,37 50,49 40,37" fill="#FCD116" stroke="#CE1126" strokeWidth="1" />
-      {/* Helmet/crest */}
-      <circle cx="50" cy="15" r="6" fill="#FCD116" stroke="#CE1126" strokeWidth="1" />
+      <path d="M60 42 L140 42 L140 110 Q140 150 100 168 Q60 150 60 110 Z"
+            fill="#009739" stroke="#FCD116" strokeWidth="3" />
+      {/* Shield inner border */}
+      <path d="M68 50 L132 50 L132 108 Q132 142 100 158 Q68 142 68 108 Z"
+            fill="none" stroke="#FCD116" strokeWidth="1" opacity="0.5" />
+
+      {/* Diamond / Amerindian headdress symbol */}
+      <polygon points="100,58 118,82 100,106 82,82" fill="#FCD116" stroke="#CE1126" strokeWidth="1.5" />
+      <polygon points="100,66 112,82 100,98 88,82" fill="#CE1126" />
+
+      {/* Wavy lines — rivers of Guyana */}
+      <path d="M72 120 Q82 114 92 120 Q102 126 112 120 Q122 114 130 120" stroke="#4FC3F7" strokeWidth="2.5" fill="none" />
+      <path d="M72 130 Q82 124 92 130 Q102 136 112 130 Q122 124 130 130" stroke="#4FC3F7" strokeWidth="2.5" fill="none" />
+
+      {/* Left jaguar */}
+      <ellipse cx="38" cy="105" rx="14" ry="10" fill="#FCD116" />
+      <ellipse cx="32" cy="98" rx="8" ry="7" fill="#FCD116" />
+      <circle cx="30" cy="96" r="1.5" fill="#000" />
+      <path d="M26 105 Q20 115 24 125 L30 125 Q28 118 32 112" fill="#FCD116" />
+      <path d="M44 108 Q48 118 46 125 L40 125 Q42 118 40 112" fill="#FCD116" />
+      <path d="M50 100 Q55 95 52 90" stroke="#FCD116" strokeWidth="3" fill="none" />
+
+      {/* Right jaguar */}
+      <ellipse cx="162" cy="105" rx="14" ry="10" fill="#FCD116" />
+      <ellipse cx="168" cy="98" rx="8" ry="7" fill="#FCD116" />
+      <circle cx="170" cy="96" r="1.5" fill="#000" />
+      <path d="M174 105 Q180 115 176 125 L170 125 Q172 118 168 112" fill="#FCD116" />
+      <path d="M156 108 Q152 118 154 125 L160 125 Q158 118 160 112" fill="#FCD116" />
+      <path d="M150 100 Q145 95 148 90" stroke="#FCD116" strokeWidth="3" fill="none" />
+
+      {/* Sugar cane (left) */}
+      <line x1="28" y1="70" x2="38" y2="42" stroke="#009739" strokeWidth="2.5" />
+      <path d="M30 55 Q22 50 26 44" stroke="#009739" strokeWidth="1.5" fill="none" />
+      <path d="M34 48 Q28 42 32 36" stroke="#009739" strokeWidth="1.5" fill="none" />
+
+      {/* Rice stalks (right) */}
+      <line x1="172" y1="70" x2="162" y2="42" stroke="#009739" strokeWidth="2.5" />
+      <path d="M170 55 Q178 50 174 44" stroke="#009739" strokeWidth="1.5" fill="none" />
+      <path d="M166 48 Q172 42 168 36" stroke="#009739" strokeWidth="1.5" fill="none" />
+
       {/* Motto banner */}
-      <rect x="20" y="75" width="60" height="12" rx="2" fill="#FCD116" />
-      <text x="50" y="84" textAnchor="middle" fontSize="5" fontWeight="bold" fill="#009739">ONE PEOPLE ONE NATION</text>
-      {/* Jaguars on sides */}
-      <circle cx="12" cy="45" r="5" fill="#FCD116" />
-      <circle cx="88" cy="45" r="5" fill="#FCD116" />
+      <path d="M30 185 Q40 178 100 178 Q160 178 170 185 L165 200 Q160 205 100 205 Q40 205 35 200 Z"
+            fill="#FCD116" stroke="#CE1126" strokeWidth="1" />
+      <text x="100" y="196" textAnchor="middle" fontSize="11" fontWeight="bold" fontFamily="serif" fill="#009739">
+        ONE PEOPLE · ONE NATION
+      </text>
+      <text x="100" y="220" textAnchor="middle" fontSize="9" fontWeight="bold" fontFamily="serif" fill="#FCD116" opacity="0.8">
+        ONE DESTINY
+      </text>
     </svg>
   );
 }
@@ -492,8 +536,8 @@ export default function BarimaMemorial() {
             May they rest in eternal peace. May their families find comfort.
             May Guyana never forget.
           </p>
-          <div className="flex justify-center mb-6 opacity-60">
-            <CoatOfArms size={72} />
+          <div className="flex justify-center mb-6">
+            <CoatOfArms size={100} />
           </div>
           <div className="flex items-center justify-center gap-2 text-yellow-400/60 text-sm">
             <Flame className="h-4 w-4" />
