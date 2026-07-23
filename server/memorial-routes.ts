@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import sharp from "sharp";
 
 const router = Router();
 
@@ -18,18 +19,9 @@ fs.mkdirSync(dataDir, { recursive: true });
 
 const tributesFile = path.join(dataDir, "tributes.json");
 
-// Configure multer for photo uploads
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.random().toString(36).slice(2, 9);
-    const ext = path.extname(file.originalname);
-    cb(null, `tribute-${uniqueSuffix}${ext}`);
-  },
-});
-
+// Configure multer — use memory storage so we can resize with sharp before saving
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
@@ -41,6 +33,20 @@ const upload = multer({
     }
   },
 });
+
+// Resize uploaded image to max 1200px wide, convert to JPEG, quality 85
+async function processPhoto(buffer: Buffer): Promise<{ filename: string }> {
+  const uniqueSuffix = Date.now() + "-" + Math.random().toString(36).slice(2, 9);
+  const filename = `tribute-${uniqueSuffix}.jpg`;
+  const outPath = path.join(uploadsDir, filename);
+
+  await sharp(buffer)
+    .resize({ width: 1200, height: 900, fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 85 })
+    .toFile(outPath);
+
+  return { filename };
+}
 
 interface Tribute {
   id: string;
@@ -73,11 +79,22 @@ router.get("/api/memorial/tributes", (_req, res) => {
 });
 
 // POST a new tribute
-router.post("/api/memorial/tributes", upload.single("photo"), (req, res) => {
+router.post("/api/memorial/tributes", upload.single("photo"), async (req, res) => {
   const { name, relationship, message } = req.body;
 
   if (!message || !message.trim()) {
     return res.status(400).json({ error: "A message is required" });
+  }
+
+  let photoUrl: string | null = null;
+  if (req.file) {
+    try {
+      const { filename } = await processPhoto(req.file.buffer);
+      photoUrl = `/api/memorial/photos/${filename}`;
+    } catch (err) {
+      console.error("Failed to process photo:", err);
+      return res.status(400).json({ error: "Failed to process photo. Please try a different image." });
+    }
   }
 
   const tribute: Tribute = {
@@ -85,7 +102,7 @@ router.post("/api/memorial/tributes", upload.single("photo"), (req, res) => {
     name: name?.trim() || "Anonymous",
     relationship: relationship?.trim() || "",
     message: message.trim(),
-    photoUrl: req.file ? `/api/memorial/photos/${req.file.filename}` : null,
+    photoUrl,
     createdAt: new Date().toISOString(),
   };
 

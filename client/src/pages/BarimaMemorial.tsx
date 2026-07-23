@@ -20,7 +20,7 @@ function TributeCard({ tribute }: { tribute: Tribute }) {
           <img
             src={tribute.photoUrl}
             alt="Memorial photo"
-            className="w-full h-48 object-cover"
+            className="w-full max-h-96 object-contain"
           />
         </div>
       )}
@@ -326,7 +326,7 @@ export default function BarimaMemorial() {
                                         cursor-pointer transition-colors">
                         <ImagePlus className="h-8 w-8" />
                         <span className="text-sm">Click to upload a photo</span>
-                        <span className="text-xs text-gray-300">JPG, PNG, WEBP — max 5MB</span>
+                        <span className="text-xs text-gray-300">JPG, PNG, WEBP — max 5MB, best at 800×600 or larger</span>
                         <input
                           type="file"
                           accept="image/*"
