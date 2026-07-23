@@ -48,19 +48,19 @@ function TributeCard({ tribute }: { tribute: Tribute }) {
 
 const timelineEvents = [
   {
-    date: "Date of Tragedy",
+    date: "Date of Tragedy — July 17, 2026",
     title: "The Day the River Fell Silent",
     description:
       "A boat carrying passengers along the Barima River in Region 1 capsized, claiming precious lives and leaving a community in shock.",
   },
   {
-    date: "Days Following",
+    date: "Days Following — July 18–22, 2026",
     title: "Search and Recovery",
     description:
       "Communities along the river came together as search and recovery efforts were carried out with courage and determination.",
   },
   {
-    date: "Week of Mourning",
+    date: "Week of Mourning — July 23–30, 2026",
     title: "A Nation Grieves Together",
     description:
       "Vigils were held across Guyana. Candles were lit in homes, churches, and community centres. The nation stood united in sorrow.",
